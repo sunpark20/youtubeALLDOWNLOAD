@@ -1,0 +1,25 @@
+name: Intel Mac Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-13
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check CPU architecture
+        run: |
+          echo "Current CPU Architecture:"
+          uname -m
+          sysctl -n machdep.cpu.brand_string
+
+      - name: Your Build Command
+        run: |
+          echo "빌드 명령어를 여기에 입력하세요"
