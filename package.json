@@ -1,0 +1,23 @@
+{
+  "name": "memory-palace-vr",
+  "version": "1.0.0",
+  "description": "VR Memory Palace - 기억의 궁전 암기 학습 앱 for Meta Quest",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "VR",
+    "WebXR",
+    "Memory Palace",
+    "Learning",
+    "Oculus",
+    "Meta Quest",
+    "Three.js"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
