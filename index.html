@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Palace VR - 기억의 궁전</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="info">
+        <h1>Memory Palace VR</h1>
+        <p id="status">VR 헤드셋을 착용하고 아래 버튼을 눌러주세요</p>
+        <button id="vr-button" disabled>VR 시작하기</button>
+    </div>
+
+    <div id="instructions" class="panel">
+        <h2>사용 방법</h2>
+        <ul>
+            <li>🎮 <strong>이동:</strong> 왼쪽 컨트롤러 조이스틱</li>
+            <li>🔄 <strong>회전:</strong> 오른쪽 컨트롤러 조이스틱</li>
+            <li>➕ <strong>객체 생성:</strong> 오른쪽 트리거</li>
+            <li>✏️ <strong>객체 선택/편집:</strong> 객체를 바라보고 왼쪽 트리거</li>
+            <li>🗑️ <strong>객체 삭제:</strong> 선택 후 B 버튼</li>
+            <li>💾 <strong>저장:</strong> Y 버튼</li>
+        </ul>
+    </div>
+
+    <div id="edit-panel" class="panel hidden">
+        <h2>객체 편집</h2>
+        <input type="text" id="object-text" placeholder="기억할 내용을 입력하세요">
+        <select id="object-color">
+            <option value="0xff0000">빨강</option>
+            <option value="0x00ff00">초록</option>
+            <option value="0x0000ff">파랑</option>
+            <option value="0xffff00">노랑</option>
+            <option value="0xff00ff">보라</option>
+            <option value="0x00ffff">청록</option>
+        </select>
+        <select id="object-shape">
+            <option value="box">상자</option>
+            <option value="sphere">구</option>
+            <option value="cylinder">원기둥</option>
+            <option value="cone">원뿔</option>
+        </select>
+        <button id="save-object">저장</button>
+        <button id="cancel-edit">취소</button>
+    </div>
+
+    <!-- Three.js 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/examples/js/webxr/VRButton.js"></script>
+
+    <!-- 앱 스크립트 -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
