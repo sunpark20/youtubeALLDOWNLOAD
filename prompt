@@ -1,0 +1,6 @@
+실행
+./run_app.sh
+
+만약 직접 실행 환경을 켜서 실행하고 싶으시다면 다음 두 줄을 순서대로 입력하세요:
+source venv/bin/activate
+streamlit run app.py

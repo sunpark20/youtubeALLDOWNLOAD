@@ -1,0 +1,43 @@
+# System
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+venv_arm64/
+venv_intel/
+
+# VS Code / Editor
+.vscode/
+.idea/
+
+# Distribution / Build
+build/
+build_arm64/
+build_intel/
+dist/
+dist_arm64/
+dist_intel/
+*.spec
+windowBuild/
+
+# Binaries and Large Files
+ffmpeg
+*.zip
+*.dmg
+*.app
+
+# Logs and History
+*.log
+.download_archive*.txt
+
+# Streamlit
+.streamlit/
+*.err
+*.out
+
+# Agent
+.gemini/
+.claude/
