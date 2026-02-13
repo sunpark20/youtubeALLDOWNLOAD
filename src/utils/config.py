@@ -5,8 +5,23 @@ Application settings and configuration
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
+
+
+def get_base_path():
+    """
+    Get base path for application resources
+
+    Works both in development and PyInstaller builds
+    """
+    if getattr(sys, 'frozen', False):
+        # Running in PyInstaller bundle
+        return Path(sys._MEIPASS)
+    else:
+        # Running in development
+        return Path(__file__).parent.parent.parent
 
 
 class Config:
@@ -24,7 +39,7 @@ class Config:
     YOUTUBE_API_KEY: Optional[str] = os.getenv("YOUTUBE_API_KEY", None)
 
     # Paths
-    BASE_DIR = Path(__file__).parent.parent.parent
+    BASE_DIR = get_base_path()
     FRONTEND_DIR = BASE_DIR / "src" / "frontend"
     DOWNLOADS_DIR = Path.home() / "Downloads" / "YouTubeDownloader"
 
