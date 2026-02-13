@@ -1,0 +1,22 @@
+# YouTube ALL DOWNLOADER - Python Dependencies
+
+# Desktop Window
+pywebview==5.0.5
+
+# Web Framework
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9
+
+# YouTube
+yt-dlp==2025.1.15
+google-api-python-client==2.116.0
+google-auth-oauthlib==1.2.0
+
+# Utilities
+pydantic==2.6.1
+aiofiles==23.2.1
+requests==2.31.0
+
+# Build
+pyinstaller==6.3.0
