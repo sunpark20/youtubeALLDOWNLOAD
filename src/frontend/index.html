@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube ALL DOWNLOADER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎬 YouTube ALL DOWNLOADER</h1>
+            <p class="subtitle">채널 전체 다운로드 · 중복 제거 · 재생목록별 폴더 구분</p>
+            <div id="status" class="status">
+                <span id="statusText">준비 완료</span>
+                <span id="ytdlpVersion" class="version"></span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="form-group">
+                    <label for="channelUrl">YouTube 채널 URL</label>
+                    <input
+                        type="text"
+                        id="channelUrl"
+                        placeholder="https://www.youtube.com/@channelname"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="includePlaylists">
+                        재생목록별 폴더 구분
+                    </label>
+
+                    <div class="form-group inline">
+                        <label for="maxVideos">최대 영상 수:</label>
+                        <input type="number" id="maxVideos" value="500" min="1" max="1000">
+                    </div>
+
+                    <div class="form-group inline">
+                        <label for="quality">화질:</label>
+                        <select id="quality">
+                            <option value="360p">360p</option>
+                            <option value="720p" selected>720p</option>
+                            <option value="1080p">1080p</option>
+                            <option value="audio">음원만 (MP3)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="analyzeBtn" class="btn btn-primary">
+                    <span class="btn-text">영상 목록 가져오기</span>
+                    <span class="btn-loader" style="display: none;">분석 중...</span>
+                </button>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <h2>분석 결과</h2>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVideos">0</div>
+                        <div class="stat-label">전체 영상</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uniqueVideos">0</div>
+                        <div class="stat-label">중복 제거 후</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="toDownload">0</div>
+                        <div class="stat-label">다운로드 대상</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="alreadyDownloaded">0</div>
+                        <div class="stat-label">이미 다운로드됨</div>
+                    </div>
+                </div>
+
+                <div class="video-list-header">
+                    <h3>영상 목록 (<span id="videoCount">0</span>개)</h3>
+                    <button id="downloadAllBtn" class="btn btn-success">
+                        <span class="btn-text">전체 다운로드</span>
+                    </button>
+                </div>
+
+                <div id="videoList" class="video-list"></div>
+            </section>
+
+            <!-- Progress Section -->
+            <section id="progressSection" class="progress-section" style="display: none;">
+                <h2>다운로드 진행 상황</h2>
+
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+
+                <div class="progress-text">
+                    <span id="progressText">0 / 0 (0%)</span>
+                </div>
+
+                <div id="downloadLog" class="download-log"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with ❤️ · Desktop App v1.0.0</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
