@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .routes import router, initialize_services
-from ..utils.config import Config
-from ..utils.logger import setup_logger
+from utils.config import Config
+from utils.logger import setup_logger
 
 # Setup logging
 logger = setup_logger("Server", logging.INFO)
@@ -63,7 +63,7 @@ async def startup_event():
     logger.info(f"Downloads directory: {Config.DOWNLOADS_DIR}")
 
     # Check yt-dlp (will auto-update on first run)
-    from ..services.updater import updater
+    from services.updater import updater
     current_version = updater.get_current_version()
     if current_version:
         logger.info(f"yt-dlp version: {current_version}")

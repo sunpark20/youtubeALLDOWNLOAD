@@ -17,12 +17,12 @@ from .models import (
     HealthResponse, UpdateResponse, ErrorResponse,
     VideoInfo, PlaylistInfo
 )
-from ..services.youtube_api import YouTubeAPIService
-from ..services.downloader import YouTubeDownloader
-from ..services.duplicate_filter import DuplicateFilter
-from ..services.updater import YtdlpUpdater
-from ..utils.config import Config
-from ..utils.validators import is_valid_youtube_url, extract_video_id
+from services.youtube_api import YouTubeAPIService
+from services.downloader import YouTubeDownloader
+from services.duplicate_filter import DuplicateFilter
+from services.updater import YtdlpUpdater
+from utils.config import Config
+from utils.validators import is_valid_youtube_url, extract_video_id
 
 logger = logging.getLogger(__name__)
 

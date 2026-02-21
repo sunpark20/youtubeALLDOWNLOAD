@@ -27,14 +27,24 @@ def start_fastapi_server():
 
     logger.info(f"Starting FastAPI server on {Config.HOST}:{Config.PORT}")
 
-    # Run uvicorn server
-    uvicorn.run(
+    # Run uvicorn server properly in a thread
+    import asyncio
+    
+    # Create config
+    config = uvicorn.Config(
         app,
         host=Config.HOST,
         port=Config.PORT,
-        log_level="error",  # Reduce noise in logs
+        log_level="error",
         access_log=False,
     )
+    
+    server = uvicorn.Server(config)
+    
+    # Disable signal handlers as we're not in the main thread
+    server.install_signal_handlers = lambda: None
+    
+    server.run()
 
 
 def main():
@@ -96,10 +106,23 @@ def main():
     logger.info("=" * 70)
 
     # Step 4: Start the application (blocking call)
+    # Webview sometimes fails natively on macOS without PyInstaller bundles
+    import webbrowser
+
+    def open_browser():
+        time.sleep(1)
+        try:
+            webbrowser.open(app_url)
+        except Exception:
+            pass
+
+    browser_thread = threading.Thread(target=open_browser, daemon=True)
+    browser_thread.start()
+
     try:
         webview.start(
-            debug=False,  # Set to True for development
-            http_server=False,  # We're using FastAPI, not built-in server
+            debug=False,
+            http_server=False,
         )
     except KeyboardInterrupt:
         logger.info("Application interrupted by user")
