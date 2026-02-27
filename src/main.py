@@ -118,19 +118,6 @@ def main():
     logger.info("=" * 70)
 
     # Step 4: Start the application (blocking call)
-    # Webview sometimes fails natively on macOS without PyInstaller bundles
-    import webbrowser
-
-    def open_browser():
-        time.sleep(1)
-        try:
-            webbrowser.open(app_url)
-        except Exception:
-            pass
-
-    browser_thread = threading.Thread(target=open_browser, daemon=True)
-    browser_thread.start()
-
     try:
         webview.start(
             debug=False,

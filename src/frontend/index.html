@@ -40,13 +40,20 @@
             <!-- Input Section -->
             <section class="input-section">
                 <div class="form-group">
-                    <label for="channelUrl">YouTube 채널 URL</label>
+                    <div class="label-row">
+                        <label for="channelUrl">YouTube 채널 또는 재생목록 URL</label>
+                        <button id="helpBtn" class="btn-help" title="사용 안내">?</button>
+                    </div>
                     <input
                         type="text"
                         id="channelUrl"
-                        placeholder="https://www.youtube.com/@channelname"
+                        placeholder="@채널명 또는 재생목록 URL을 입력하세요"
                         autocomplete="off"
                     >
+                    <div class="input-examples">
+                        <span class="example-tag">예: @콤므</span>
+                        <span class="example-tag">예: https://www.youtube.com/playlist?list=PL...</span>
+                    </div>
                 </div>
 
                 <div class="options">
@@ -57,7 +64,7 @@
 
                     <div class="form-group inline">
                         <label for="maxVideos">최대 영상 수:</label>
-                        <input type="number" id="maxVideos" value="500" min="1" max="1000">
+                        <input type="number" id="maxVideos" value="500" min="1" max="10000">
                     </div>
 
                     <div class="form-group inline">
@@ -76,6 +83,46 @@
                     <span class="btn-loader" style="display: none;">분석 중...</span>
                 </button>
             </section>
+
+            <!-- Help Modal -->
+            <div id="helpModal" class="modal-overlay" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>사용 안내</h3>
+                        <button id="helpCloseBtn" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="help-section">
+                            <h4>1. 채널 전체 다운로드 (@채널명)</h4>
+                            <p style="margin-bottom: 8px;">YouTube 채널 페이지에서 <strong>@핸들</strong>을 복사해서 입력하세요.</p>
+                            <img src="/static/images/channel-handle-guide.png" alt="채널 핸들 위치 안내" style="width: 100%; max-width: 420px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <p class="help-url" style="margin-top: 4px;">입력 예시: <strong>@콤므</strong></p>
+                            <div class="help-option">
+                                <span class="help-check checked">&#10003;</span>
+                                <div>
+                                    <strong>재생목록별 폴더 구분 체크</strong>
+                                    <p>@채널명 폴더 안에 재생목록별 하위 폴더를 만들어 다운로드합니다.</p>
+                                    <code>@채널명/재생목록A/영상1.mp4</code>
+                                </div>
+                            </div>
+                            <div class="help-option">
+                                <span class="help-check">&#10007;</span>
+                                <div>
+                                    <strong>재생목록별 폴더 구분 체크 해제</strong>
+                                    <p>모든 영상을 @채널명 폴더 하나에 다운로드합니다.</p>
+                                    <code>@채널명/영상1.mp4</code>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="help-divider">
+                        <div class="help-section">
+                            <h4>2. 재생목록 다운로드</h4>
+                            <p class="help-url">https://www.youtube.com/playlist?list=<strong>PLxxxxxxx</strong></p>
+                            <p>특정 재생목록의 모든 영상을 다운로드합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Results Section -->
             <section id="resultsSection" class="results-section" style="display: none;">

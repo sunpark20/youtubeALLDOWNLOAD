@@ -23,7 +23,7 @@ from services.downloader import YouTubeDownloader
 from services.duplicate_filter import DuplicateFilter
 from services.updater import YtdlpUpdater
 from utils.config import Config
-from utils.validators import is_valid_youtube_url, extract_video_id, extract_playlist_id
+from utils.validators import is_valid_youtube_url, normalize_input, extract_video_id, extract_playlist_id
 
 logger = logging.getLogger(__name__)
 
@@ -136,12 +136,14 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
     4. Check for already downloaded files
     5. Return analysis results
     """
-    # Validate URL
+    # Normalize and validate URL
+    request.url = normalize_input(request.url)
     if not is_valid_youtube_url(request.url):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
         channel_id = None
+        channel_name = ''
         videos = []
         use_fallback = not youtube_service
 
@@ -161,7 +163,8 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
         if use_fallback:
             # Fallback to yt-dlp
             logger.info(f"Using yt-dlp fallback for channel analysis: {request.url}")
-            videos = downloader.get_channel_videos(request.url, request.max_videos)
+            videos, channel_meta = downloader.get_channel_videos(request.url, request.max_videos)
+            channel_name = channel_meta.get('channel', '')
 
             # Extract channel_id from URL for download path
             channel_id = YouTubeAPIService.extract_channel_id(request.url) or "unknown_channel"
@@ -209,6 +212,7 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
         return ChannelAnalyzeResponse(
             success=True,
             channel_id=channel_id,
+            channel_name=channel_name or None,
             total_videos=total_videos,
             unique_videos=unique_videos,
             duplicates_removed=duplicates_removed,
@@ -229,12 +233,14 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
 @router.post("/playlist/analyze", response_model=PlaylistAnalyzeResponse)
 async def analyze_playlist(request: PlaylistAnalyzeRequest):
     """Analyze a YouTube playlist"""
+    request.url = normalize_input(request.url)
     if not is_valid_youtube_url(request.url):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
         playlist_id = extract_playlist_id(request.url)
         videos = []
+        playlist_meta = {}
         use_fallback = not youtube_service
 
         if not use_fallback:
@@ -246,7 +252,10 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
 
         if use_fallback:
             logger.info(f"Using yt-dlp fallback for playlist analysis: {request.url}")
-            videos = downloader.get_playlist_videos(request.url, request.max_videos)
+            videos, playlist_meta = downloader.get_playlist_videos(request.url, request.max_videos)
+
+        playlist_name = playlist_meta.get('playlist_title', '') if use_fallback else ''
+        channel_name = playlist_meta.get('channel', '') if use_fallback else ''
 
         if not videos:
             return PlaylistAnalyzeResponse(
@@ -281,6 +290,8 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
         return PlaylistAnalyzeResponse(
             success=True,
             playlist_id=playlist_id,
+            playlist_name=playlist_name or None,
+            channel_name=channel_name or None,
             total_videos=total_videos,
             unique_videos=unique_videos,
             duplicates_removed=duplicates_removed,
@@ -294,6 +305,37 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
         raise
     except Exception as e:
         logger.error(f"Error analyzing playlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/download/start")
+async def start_download(request: DownloadExtractRequest):
+    """
+    Server-side download: yt-dlp로 파일을 직접 다운로드하여 저장
+    """
+    try:
+        logger.info(f"Starting server-side download for: {request.video_id} ({request.quality})")
+
+        # 채널명/플레이리스트명 폴더 구조 구성
+        output_dir = str(Config.DOWNLOADS_DIR)
+        if request.channel_name:
+            output_dir = str(Config.DOWNLOADS_DIR / request.channel_name)
+            if request.playlist_name:
+                output_dir = str(Config.DOWNLOADS_DIR / request.channel_name / request.playlist_name)
+
+        filepath = await asyncio.to_thread(
+            downloader.download_video, request.video_id, request.quality, output_dir
+        )
+
+        if filepath:
+            return {"success": True, "message": "다운로드 완료", "filepath": filepath}
+        else:
+            raise HTTPException(status_code=500, detail="다운로드 실패")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in server-side download: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

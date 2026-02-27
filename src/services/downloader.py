@@ -5,8 +5,11 @@ Wrapper around yt-dlp for extracting download information
 """
 
 import logging
+import os
 import yt_dlp
 from typing import Dict, List, Optional
+
+from utils.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +22,7 @@ class YouTubeDownloader:
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'extractor_args': {'youtube': {'lang': ['ko']}},
         }
 
     def get_video_info(self, video_id: str) -> Optional[Dict]:
@@ -170,6 +174,7 @@ class YouTubeDownloader:
             'no_warnings': True,
             'extract_flat': 'in_playlist',
             'playlistend': max_videos,
+            'extractor_args': {'youtube': {'lang': ['ko']}},
         }
 
         try:
@@ -178,7 +183,7 @@ class YouTubeDownloader:
 
                 if not info:
                     logger.warning(f"No info extracted for channel: {channel_url}")
-                    return []
+                    return [], {}
 
                 entries = info.get('entries', [])
                 videos = []
@@ -189,12 +194,16 @@ class YouTubeDownloader:
                             'title': entry.get('title', 'Unknown'),
                         })
 
-                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from channel")
-                return videos
+                metadata = {
+                    'channel': info.get('channel', '') or info.get('uploader', ''),
+                }
+
+                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from channel (channel: {metadata['channel']})")
+                return videos, metadata
 
         except Exception as e:
             logger.error(f"Error getting channel videos via yt-dlp: {e}")
-            return []
+            return [], {}
 
     def get_playlist_videos(self, playlist_url: str, max_videos: int = 500) -> List[Dict]:
         """
@@ -212,6 +221,7 @@ class YouTubeDownloader:
             'no_warnings': True,
             'extract_flat': 'in_playlist',
             'playlistend': max_videos,
+            'extractor_args': {'youtube': {'lang': ['ko']}},
         }
 
         try:
@@ -220,7 +230,7 @@ class YouTubeDownloader:
 
                 if not info:
                     logger.warning(f"No info extracted for playlist: {playlist_url}")
-                    return []
+                    return [], {}
 
                 entries = info.get('entries', [])
                 videos = []
@@ -231,12 +241,77 @@ class YouTubeDownloader:
                             'title': entry.get('title', 'Unknown'),
                         })
 
-                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from playlist")
-                return videos
+                metadata = {
+                    'playlist_title': info.get('title', ''),
+                    'channel': info.get('channel', '') or info.get('uploader', ''),
+                }
+
+                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from playlist (channel: {metadata['channel']}, playlist: {metadata['playlist_title']})")
+                return videos, metadata
 
         except Exception as e:
             logger.error(f"Error getting playlist videos via yt-dlp: {e}")
-            return []
+            return [], {}
+
+    def download_video(self, video_id: str, quality: str = '720p', output_dir: str = None) -> Optional[str]:
+        """
+        Download a video using yt-dlp (server-side download).
+
+        Args:
+            video_id: YouTube video ID
+            quality: Preferred quality (e.g., '720p', '1080p', 'best', 'audio')
+            output_dir: Output directory path
+
+        Returns:
+            Downloaded file path or None
+        """
+        url = f"https://www.youtube.com/watch?v={video_id}"
+
+        if not output_dir:
+            output_dir = str(Config.DOWNLOADS_DIR)
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        if quality == 'audio':
+            format_string = 'bestaudio[ext=m4a]/bestaudio'
+        else:
+            height = quality.replace('p', '') if quality != 'best' else ''
+            if height:
+                format_string = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={height}][ext=mp4]/best'
+            else:
+                format_string = 'best[ext=mp4]/best'
+
+        ydl_opts = {
+            **self.ydl_opts_base,
+            'format': format_string,
+            'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
+        }
+
+        if quality != 'audio':
+            ydl_opts['merge_output_format'] = 'mp4'
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                if not info:
+                    return None
+
+                filepath = ydl.prepare_filename(info)
+                # 병합 시 확장자가 바뀔 수 있으므로 mp4로 변경
+                if quality != 'audio':
+                    base, _ = os.path.splitext(filepath)
+                    filepath = base + '.mp4'
+
+                if os.path.exists(filepath):
+                    logger.info(f"Downloaded: {filepath}")
+                    return filepath
+                else:
+                    logger.warning(f"File not found after download: {filepath}")
+                    return None
+
+        except Exception as e:
+            logger.error(f"Error downloading {video_id}: {e}")
+            return None
 
     def get_download_info(self, video_id: str) -> Optional[Dict]:
         """

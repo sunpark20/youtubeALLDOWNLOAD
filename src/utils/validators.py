@@ -5,7 +5,30 @@ Validate user inputs and URLs
 """
 
 import re
+from urllib.parse import unquote
 from typing import Optional, Tuple
+
+
+def normalize_input(url: str) -> str:
+    """
+    Normalize user input: handle @handle shorthand and URL-encoded characters.
+
+    Args:
+        url: Raw user input (could be @handle or full URL)
+
+    Returns:
+        Normalized YouTube URL
+    """
+    url = url.strip()
+
+    # URL-decode for validation (e.g. %EC%BD%A4%EB%AF%80 -> 콤므)
+    url = unquote(url)
+
+    # @handle shorthand -> full URL
+    if re.match(r'^@\S+$', url):
+        url = f'https://www.youtube.com/{url}'
+
+    return url
 
 
 def is_valid_youtube_url(url: str) -> bool:
@@ -18,12 +41,15 @@ def is_valid_youtube_url(url: str) -> bool:
     Returns:
         True if valid YouTube URL
     """
+    # Normalize first
+    url = normalize_input(url)
+
     youtube_patterns = [
         r'(https?://)?(www\.)?youtube\.com/watch\?v=[\w-]+',
         r'(https?://)?(www\.)?youtube\.com/channel/[\w-]+',
-        r'(https?://)?(www\.)?youtube\.com/@[\w.\-]+',
-        r'(https?://)?(www\.)?youtube\.com/c/[\w.\-]+',
-        r'(https?://)?(www\.)?youtube\.com/user/[\w.\-]+',
+        r'(https?://)?(www\.)?youtube\.com/@.+',
+        r'(https?://)?(www\.)?youtube\.com/c/.+',
+        r'(https?://)?(www\.)?youtube\.com/user/.+',
         r'(https?://)?(www\.)?youtube\.com/playlist\?list=[\w-]+',
         r'(https?://)?youtu\.be/[\w-]+',
     ]

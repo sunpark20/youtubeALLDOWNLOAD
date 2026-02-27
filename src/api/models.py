@@ -27,6 +27,8 @@ class DownloadExtractRequest(BaseModel):
     """Request to extract download URL for a video"""
     video_id: str = Field(..., description="YouTube video ID")
     quality: str = Field(default="720p", description="Preferred quality (360p, 720p, 1080p, audio)")
+    channel_name: Optional[str] = Field(default=None, description="Channel name for folder structure")
+    playlist_name: Optional[str] = Field(default=None, description="Playlist name for folder structure")
 
 
 # Response Models
@@ -67,6 +69,7 @@ class PlaylistAnalyzeResponse(BaseModel):
     success: bool
     playlist_id: Optional[str] = None
     playlist_name: Optional[str] = None
+    channel_name: Optional[str] = None
     total_videos: int = 0
     unique_videos: int = 0
     duplicates_removed: int = 0

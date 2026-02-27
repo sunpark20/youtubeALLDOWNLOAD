@@ -9,6 +9,8 @@ const API_BASE = '/api';
 
 // State
 let currentVideos = [];
+let currentChannelName = '';
+let currentPlaylistName = '';
 let isAnalyzing = false;
 let isDownloading = false;
 
@@ -47,6 +49,11 @@ const elements = {
     saveApiKeyBtn: document.getElementById('saveApiKeyBtn'),
     apiKeyMessage: document.getElementById('apiKeyMessage'),
     apiKeyStatus: document.getElementById('apiKeyStatus'),
+
+    // Help
+    helpBtn: document.getElementById('helpBtn'),
+    helpModal: document.getElementById('helpModal'),
+    helpCloseBtn: document.getElementById('helpCloseBtn'),
 };
 
 /**
@@ -60,10 +67,15 @@ async function init() {
     await checkApiKeyStatus();
 
     // Setup event listeners
-    elements.analyzeBtn.addEventListener('click', analyzeChannel);
+    elements.analyzeBtn.addEventListener('click', analyzeUrl);
     elements.downloadAllBtn.addEventListener('click', downloadAll);
     elements.settingsBtn.addEventListener('click', toggleSettings);
     elements.saveApiKeyBtn.addEventListener('click', saveApiKey);
+    elements.helpBtn.addEventListener('click', () => elements.helpModal.style.display = 'flex');
+    elements.helpCloseBtn.addEventListener('click', () => elements.helpModal.style.display = 'none');
+    elements.helpModal.addEventListener('click', (e) => {
+        if (e.target === elements.helpModal) elements.helpModal.style.display = 'none';
+    });
 
     console.log('Application initialized!');
 }
@@ -94,17 +106,29 @@ async function checkHealth() {
 }
 
 /**
- * Analyze YouTube channel
+ * Detect URL type and call appropriate analyze endpoint
  */
-async function analyzeChannel() {
+function detectUrlType(url) {
+    if (url.includes('playlist?list=') || url.includes('&list=')) {
+        return 'playlist';
+    }
+    return 'channel';
+}
+
+/**
+ * Analyze URL (auto-detect channel or playlist)
+ */
+async function analyzeUrl() {
     const url = elements.channelUrl.value.trim();
 
     if (!url) {
-        alert('YouTube 채널 URL을 입력해주세요.');
+        alert('YouTube 채널 또는 재생목록 URL을 입력해주세요.');
         return;
     }
 
     if (isAnalyzing) return;
+
+    const urlType = detectUrlType(url);
 
     // Update UI
     isAnalyzing = true;
@@ -112,19 +136,25 @@ async function analyzeChannel() {
     elements.analyzeBtn.querySelector('.btn-text').style.display = 'none';
     elements.analyzeBtn.querySelector('.btn-loader').style.display = 'inline';
     elements.resultsSection.style.display = 'none';
-    elements.statusText.textContent = '분석 중...';
+    elements.statusText.textContent = urlType === 'playlist' ? '재생목록 분석 중...' : '채널 분석 중...';
 
     try {
-        const response = await fetch(`${API_BASE}/channel/analyze`, {
+        const endpoint = urlType === 'playlist' ? '/playlist/analyze' : '/channel/analyze';
+        const body = {
+            url: url,
+            max_videos: parseInt(elements.maxVideos.value),
+        };
+
+        if (urlType === 'channel') {
+            body.include_playlists = elements.includePlaylists.checked;
+        }
+
+        const response = await fetch(`${API_BASE}${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                url: url,
-                include_playlists: elements.includePlaylists.checked,
-                max_videos: parseInt(elements.maxVideos.value),
-            }),
+            body: JSON.stringify(body),
         });
 
         const data = await response.json();
@@ -141,7 +171,7 @@ async function analyzeChannel() {
         }
 
     } catch (error) {
-        console.error('Error analyzing channel:', error);
+        console.error('Error analyzing:', error);
         alert(`오류: ${error.message}`);
         elements.statusText.textContent = '오류 발생';
     } finally {
@@ -163,8 +193,10 @@ function displayResults(data) {
     elements.alreadyDownloaded.textContent = data.already_downloaded;
     elements.videoCount.textContent = data.videos.length;
 
-    // Store videos
+    // Store videos and metadata
     currentVideos = data.videos;
+    currentChannelName = data.channel_name || '';
+    currentPlaylistName = data.playlist_name || '';
 
     // Display video list
     renderVideoList(data.videos);
@@ -236,8 +268,9 @@ async function downloadAll() {
         elements.progressText.textContent = `${i + 1} / ${currentVideos.length} (${progress}%)`;
 
         try {
-            // Extract download URL
-            const response = await fetch(`${API_BASE}/download/extract`, {
+            addLog(`⬇️ ${video.title} 다운로드 중...`, 'info');
+
+            const response = await fetch(`${API_BASE}/download/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -245,29 +278,18 @@ async function downloadAll() {
                 body: JSON.stringify({
                     video_id: video.id,
                     quality: quality,
+                    channel_name: currentChannelName || null,
+                    playlist_name: currentPlaylistName || null,
                 }),
             });
 
             const data = await response.json();
 
-            if (data.success && data.formats[quality]) {
-                // Trigger download
-                const downloadUrl = data.formats[quality];
-                const filename = `${video.title}.mp4`; // Will be determined by browser
-
-                // Create download link
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = filename;
-                a.click();
-
+            if (response.ok && data.success) {
                 completed++;
                 addLog(`✅ ${video.title}`, 'success');
-
-                // Delay between downloads
-                await delay(500);
             } else {
-                throw new Error('다운로드 URL을 가져올 수 없습니다');
+                throw new Error(data.detail || '다운로드 실패');
             }
 
         } catch (error) {
@@ -279,7 +301,11 @@ async function downloadAll() {
 
     // Complete
     addLog(`완료! 성공: ${completed}, 실패: ${failed}`, 'info');
-    alert(`다운로드 완료!\n성공: ${completed}\n실패: ${failed}`);
+    const savePath = currentChannelName
+        ? `~/Downloads/YouTubeDownloader/${currentChannelName}/${currentPlaylistName || ''}`
+        : '~/Downloads/YouTubeDownloader/';
+    addLog(`📁 저장 위치: ${savePath}`, 'info');
+    alert(`다운로드 완료!\n성공: ${completed}\n실패: ${failed}\n\n저장 위치: ${savePath}`);
 
     isDownloading = false;
     elements.downloadAllBtn.disabled = false;
