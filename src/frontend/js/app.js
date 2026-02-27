@@ -39,6 +39,14 @@ const elements = {
     // Status
     statusText: document.getElementById('statusText'),
     ytdlpVersion: document.getElementById('ytdlpVersion'),
+
+    // Settings
+    settingsBtn: document.getElementById('settingsBtn'),
+    settingsPanel: document.getElementById('settingsPanel'),
+    apiKeyInput: document.getElementById('apiKeyInput'),
+    saveApiKeyBtn: document.getElementById('saveApiKeyBtn'),
+    apiKeyMessage: document.getElementById('apiKeyMessage'),
+    apiKeyStatus: document.getElementById('apiKeyStatus'),
 };
 
 /**
@@ -47,12 +55,15 @@ const elements = {
 async function init() {
     console.log('Initializing YouTube ALL DOWNLOADER...');
 
-    // Check health
+    // Check health and settings
     await checkHealth();
+    await checkApiKeyStatus();
 
     // Setup event listeners
     elements.analyzeBtn.addEventListener('click', analyzeChannel);
     elements.downloadAllBtn.addEventListener('click', downloadAll);
+    elements.settingsBtn.addEventListener('click', toggleSettings);
+    elements.saveApiKeyBtn.addEventListener('click', saveApiKey);
 
     console.log('Application initialized!');
 }
@@ -285,6 +296,73 @@ function addLog(message, type = 'info') {
 
     // Auto-scroll to bottom
     elements.downloadLog.scrollTop = elements.downloadLog.scrollHeight;
+}
+
+/**
+ * Toggle settings panel
+ */
+function toggleSettings() {
+    const panel = elements.settingsPanel;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+/**
+ * Check API key status from server
+ */
+async function checkApiKeyStatus() {
+    try {
+        const response = await fetch(`${API_BASE}/settings`);
+        const data = await response.json();
+
+        if (data.has_api_key) {
+            elements.apiKeyStatus.textContent = 'API Key ✓';
+            elements.apiKeyStatus.className = 'api-key-badge badge-active';
+        } else {
+            elements.apiKeyStatus.textContent = 'yt-dlp 모드';
+            elements.apiKeyStatus.className = 'api-key-badge badge-fallback';
+        }
+    } catch (error) {
+        console.error('Failed to check API key status:', error);
+    }
+}
+
+/**
+ * Save API key
+ */
+async function saveApiKey() {
+    const apiKey = elements.apiKeyInput.value.trim();
+
+    if (!apiKey) {
+        elements.apiKeyMessage.textContent = 'API 키를 입력해주세요.';
+        elements.apiKeyMessage.className = 'settings-message error';
+        return;
+    }
+
+    elements.saveApiKeyBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/settings/api-key`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            elements.apiKeyMessage.textContent = data.message;
+            elements.apiKeyMessage.className = 'settings-message success';
+            elements.apiKeyInput.value = '';
+            await checkApiKeyStatus();
+        } else {
+            throw new Error(data.detail || data.message || 'API 키 설정 실패');
+        }
+    } catch (error) {
+        elements.apiKeyMessage.textContent = error.message;
+        elements.apiKeyMessage.className = 'settings-message error';
+    } finally {
+        elements.saveApiKeyBtn.disabled = false;
+    }
 }
 
 /**

@@ -21,9 +21,9 @@ def is_valid_youtube_url(url: str) -> bool:
     youtube_patterns = [
         r'(https?://)?(www\.)?youtube\.com/watch\?v=[\w-]+',
         r'(https?://)?(www\.)?youtube\.com/channel/[\w-]+',
-        r'(https?://)?(www\.)?youtube\.com/@[\w-]+',
-        r'(https?://)?(www\.)?youtube\.com/c/[\w-]+',
-        r'(https?://)?(www\.)?youtube\.com/user/[\w-]+',
+        r'(https?://)?(www\.)?youtube\.com/@[\w.\-]+',
+        r'(https?://)?(www\.)?youtube\.com/c/[\w.\-]+',
+        r'(https?://)?(www\.)?youtube\.com/user/[\w.\-]+',
         r'(https?://)?(www\.)?youtube\.com/playlist\?list=[\w-]+',
         r'(https?://)?youtu\.be/[\w-]+',
     ]

@@ -149,6 +149,95 @@ class YouTubeDownloader:
             logger.error(f"Error getting download URL for {video_id}: {e}")
             return None
 
+    def get_channel_videos(self, channel_url: str, max_videos: int = 500) -> List[Dict]:
+        """
+        Get video list from a channel URL using yt-dlp (fallback when no API key).
+
+        Args:
+            channel_url: YouTube channel URL
+            max_videos: Maximum number of videos to fetch
+
+        Returns:
+            List of video dictionaries with 'id' and 'title'
+        """
+        # Ensure URL points to the channel's videos tab
+        url = channel_url.rstrip('/')
+        if '/videos' not in url:
+            url += '/videos'
+
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': 'in_playlist',
+            'playlistend': max_videos,
+        }
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+
+                if not info:
+                    logger.warning(f"No info extracted for channel: {channel_url}")
+                    return []
+
+                entries = info.get('entries', [])
+                videos = []
+                for entry in entries:
+                    if entry and entry.get('id'):
+                        videos.append({
+                            'id': entry['id'],
+                            'title': entry.get('title', 'Unknown'),
+                        })
+
+                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from channel")
+                return videos
+
+        except Exception as e:
+            logger.error(f"Error getting channel videos via yt-dlp: {e}")
+            return []
+
+    def get_playlist_videos(self, playlist_url: str, max_videos: int = 500) -> List[Dict]:
+        """
+        Get video list from a playlist URL using yt-dlp (fallback when no API key).
+
+        Args:
+            playlist_url: YouTube playlist URL
+            max_videos: Maximum number of videos to fetch
+
+        Returns:
+            List of video dictionaries with 'id' and 'title'
+        """
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': 'in_playlist',
+            'playlistend': max_videos,
+        }
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(playlist_url, download=False)
+
+                if not info:
+                    logger.warning(f"No info extracted for playlist: {playlist_url}")
+                    return []
+
+                entries = info.get('entries', [])
+                videos = []
+                for entry in entries:
+                    if entry and entry.get('id'):
+                        videos.append({
+                            'id': entry['id'],
+                            'title': entry.get('title', 'Unknown'),
+                        })
+
+                logger.info(f"yt-dlp: Retrieved {len(videos)} videos from playlist")
+                return videos
+
+        except Exception as e:
+            logger.error(f"Error getting playlist videos via yt-dlp: {e}")
+            return []
+
     def get_download_info(self, video_id: str) -> Optional[Dict]:
         """
         Get complete download information with multiple quality options

@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import logging
+import urllib.request
 import webview
 
 from utils.logger import setup_logger
@@ -79,8 +80,19 @@ def main():
     server_thread = threading.Thread(target=start_fastapi_server, daemon=True)
     server_thread.start()
 
-    # Wait for server to start
-    time.sleep(2)
+    # Wait for server to be ready (health check polling)
+    health_url = f"http://{Config.HOST}:{Config.PORT}/api/health"
+    server_ready = False
+    for _ in range(20):  # max 10 seconds (20 * 0.5s)
+        try:
+            urllib.request.urlopen(health_url, timeout=1)
+            server_ready = True
+            break
+        except Exception:
+            time.sleep(0.5)
+
+    if not server_ready:
+        logger.warning("Server did not respond to health check within 10s, proceeding anyway")
 
     # Step 3: Create pywebview window
     logger.info("Creating desktop window...")

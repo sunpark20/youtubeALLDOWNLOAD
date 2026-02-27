@@ -15,6 +15,7 @@ from .models import (
     PlaylistAnalyzeRequest, PlaylistAnalyzeResponse,
     DownloadExtractRequest, DownloadExtractResponse,
     HealthResponse, UpdateResponse, ErrorResponse,
+    APIKeyRequest, APIKeyResponse,
     VideoInfo, PlaylistInfo
 )
 from services.youtube_api import YouTubeAPIService
@@ -22,7 +23,7 @@ from services.downloader import YouTubeDownloader
 from services.duplicate_filter import DuplicateFilter
 from services.updater import YtdlpUpdater
 from utils.config import Config
-from utils.validators import is_valid_youtube_url, extract_video_id
+from utils.validators import is_valid_youtube_url, extract_video_id, extract_playlist_id
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,43 @@ def initialize_services(api_key: str = None):
         logger.info("YouTube API service initialized")
     else:
         logger.warning("YouTube API key not set - some features will be limited")
+
+
+@router.get("/settings", response_model=APIKeyResponse)
+async def get_settings():
+    """Get current settings (API key status)"""
+    has_key = youtube_service is not None
+    return APIKeyResponse(
+        success=True,
+        has_api_key=has_key,
+        message="API 키가 설정되어 있습니다." if has_key else "API 키가 설정되지 않았습니다. (yt-dlp 폴백 사용)"
+    )
+
+
+@router.post("/settings/api-key", response_model=APIKeyResponse)
+async def set_api_key(request: APIKeyRequest):
+    """Set YouTube Data API key at runtime"""
+    global youtube_service
+
+    api_key = request.api_key.strip()
+    if not api_key:
+        raise HTTPException(status_code=400, detail="API 키가 비어있습니다.")
+
+    try:
+        if youtube_service:
+            youtube_service.set_api_key(api_key)
+        else:
+            youtube_service = YouTubeAPIService(api_key)
+
+        logger.info("YouTube API key updated via settings")
+        return APIKeyResponse(
+            success=True,
+            has_api_key=True,
+            message="API 키가 성공적으로 설정되었습니다."
+        )
+    except Exception as e:
+        logger.error(f"Failed to set API key: {e}")
+        raise HTTPException(status_code=400, detail=f"API 키 설정 실패: {e}")
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -98,28 +136,35 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
     4. Check for already downloaded files
     5. Return analysis results
     """
-    if not youtube_service:
-        raise HTTPException(status_code=503, detail="YouTube API not configured")
-
     # Validate URL
     if not is_valid_youtube_url(request.url):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
     try:
-        # Extract channel ID
-        channel_id = youtube_service.extract_channel_id(request.url)
+        channel_id = None
+        videos = []
+        use_fallback = not youtube_service
 
-        if not channel_id:
-            # Try to get from username
-            channel_id = youtube_service.get_channel_id_from_username(request.url)
+        if not use_fallback:
+            # Try YouTube Data API first
+            channel_id = youtube_service.extract_channel_id(request.url)
 
-        if not channel_id:
-            raise HTTPException(status_code=400, detail="Could not extract channel ID")
+            if not channel_id:
+                channel_id = youtube_service.get_channel_id_from_username(request.url)
 
-        logger.info(f"Analyzing channel: {channel_id}")
+            if channel_id:
+                logger.info(f"Analyzing channel via API: {channel_id}")
+                videos = youtube_service.get_channel_videos(channel_id, request.max_videos)
+            else:
+                use_fallback = True
 
-        # Get all videos
-        videos = youtube_service.get_channel_videos(channel_id, request.max_videos)
+        if use_fallback:
+            # Fallback to yt-dlp
+            logger.info(f"Using yt-dlp fallback for channel analysis: {request.url}")
+            videos = downloader.get_channel_videos(request.url, request.max_videos)
+
+            # Extract channel_id from URL for download path
+            channel_id = YouTubeAPIService.extract_channel_id(request.url) or "unknown_channel"
 
         if not videos:
             return ChannelAnalyzeResponse(
@@ -151,15 +196,16 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
             for v in videos
         ]
 
-        # Get playlists if requested
+        # Get playlists if requested (only with API)
         playlists = []
-        if request.include_playlists:
+        if request.include_playlists and youtube_service and channel_id:
             playlist_data = youtube_service.get_channel_playlists(channel_id)
             playlists = [
                 PlaylistInfo(id=p['id'], title=p['title'], video_count=0)
                 for p in playlist_data
             ]
 
+        source = "yt-dlp" if use_fallback else "YouTube API"
         return ChannelAnalyzeResponse(
             success=True,
             channel_id=channel_id,
@@ -170,7 +216,7 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
             to_download=to_download,
             videos=video_infos,
             playlists=playlists,
-            message=f"Found {to_download} videos to download"
+            message=f"Found {to_download} videos to download (via {source})"
         )
 
     except HTTPException:
@@ -183,16 +229,72 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
 @router.post("/playlist/analyze", response_model=PlaylistAnalyzeResponse)
 async def analyze_playlist(request: PlaylistAnalyzeRequest):
     """Analyze a YouTube playlist"""
-    if not youtube_service:
-        raise HTTPException(status_code=503, detail="YouTube API not configured")
+    if not is_valid_youtube_url(request.url):
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
-    # Implementation similar to channel analysis
-    # TODO: Complete implementation
+    try:
+        playlist_id = extract_playlist_id(request.url)
+        videos = []
+        use_fallback = not youtube_service
 
-    return PlaylistAnalyzeResponse(
-        success=False,
-        message="Playlist analysis not yet implemented"
-    )
+        if not use_fallback:
+            try:
+                videos = youtube_service.get_playlist_videos(playlist_id, request.max_videos)
+            except Exception as e:
+                logger.warning(f"API playlist fetch failed, falling back to yt-dlp: {e}")
+                use_fallback = True
+
+        if use_fallback:
+            logger.info(f"Using yt-dlp fallback for playlist analysis: {request.url}")
+            videos = downloader.get_playlist_videos(request.url, request.max_videos)
+
+        if not videos:
+            return PlaylistAnalyzeResponse(
+                success=True,
+                playlist_id=playlist_id,
+                message="No videos found in playlist"
+            )
+
+        total_videos = len(videos)
+
+        # Deduplicate
+        videos = duplicate_filter.deduplicate_video_ids(videos)
+        unique_videos = len(videos)
+        duplicates_removed = total_videos - unique_videos
+
+        # Check for already downloaded
+        download_path = Config.get_download_path(playlist_id or "unknown_playlist")
+        videos = duplicate_filter.filter_already_downloaded(videos, str(download_path))
+        to_download = len(videos)
+        already_downloaded = unique_videos - to_download
+
+        video_infos = [
+            VideoInfo(
+                id=v['id'],
+                title=v['title'],
+                published_at=v.get('publishedAt')
+            )
+            for v in videos
+        ]
+
+        source = "yt-dlp" if use_fallback else "YouTube API"
+        return PlaylistAnalyzeResponse(
+            success=True,
+            playlist_id=playlist_id,
+            total_videos=total_videos,
+            unique_videos=unique_videos,
+            duplicates_removed=duplicates_removed,
+            already_downloaded=already_downloaded,
+            to_download=to_download,
+            videos=video_infos,
+            message=f"Found {to_download} videos to download (via {source})"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing playlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/download/extract", response_model=DownloadExtractResponse)

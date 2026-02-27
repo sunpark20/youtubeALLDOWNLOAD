@@ -10,13 +10,30 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>🎬 YouTube ALL DOWNLOADER</h1>
+            <div class="header-top">
+                <h1>🎬 YouTube ALL DOWNLOADER</h1>
+                <button id="settingsBtn" class="btn-icon" title="설정">⚙</button>
+            </div>
             <p class="subtitle">채널 전체 다운로드 · 중복 제거 · 재생목록별 폴더 구분</p>
             <div id="status" class="status">
                 <span id="statusText">준비 완료</span>
                 <span id="ytdlpVersion" class="version"></span>
+                <span id="apiKeyStatus" class="api-key-badge"></span>
             </div>
         </header>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="settings-panel" style="display: none;">
+            <div class="settings-content">
+                <h3>YouTube Data API 설정</h3>
+                <p class="settings-desc">API 키가 없어도 yt-dlp를 통해 채널 분석이 가능합니다. API 키를 설정하면 더 정확한 결과를 얻을 수 있습니다.</p>
+                <div class="api-key-form">
+                    <input type="password" id="apiKeyInput" placeholder="YouTube Data API v3 키 입력" autocomplete="off">
+                    <button id="saveApiKeyBtn" class="btn btn-save">저장</button>
+                </div>
+                <p id="apiKeyMessage" class="settings-message"></p>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <main class="main-content">

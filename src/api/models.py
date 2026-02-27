@@ -70,6 +70,8 @@ class PlaylistAnalyzeResponse(BaseModel):
     total_videos: int = 0
     unique_videos: int = 0
     duplicates_removed: int = 0
+    already_downloaded: int = 0
+    to_download: int = 0
     videos: List[VideoInfo] = []
     message: Optional[str] = None
 
@@ -106,6 +108,18 @@ class UpdateResponse(BaseModel):
     success: bool
     current_version: Optional[str] = None
     latest_version: Optional[str] = None
+    message: str
+
+
+class APIKeyRequest(BaseModel):
+    """Request to set YouTube API key"""
+    api_key: str = Field(..., description="YouTube Data API v3 key")
+
+
+class APIKeyResponse(BaseModel):
+    """Response for API key operations"""
+    success: bool
+    has_api_key: bool = False
     message: str
 
 
