@@ -166,7 +166,14 @@ class YouTubeDownloader:
         """
         # Ensure URL points to the channel's videos tab
         url = channel_url.rstrip('/')
-        if '/videos' not in url:
+        
+        # Remove other channel tabs if present
+        for tab in ['/featured', '/playlists', '/shorts', '/streams', '/community']:
+            if url.endswith(tab):
+                url = url[:-len(tab)]
+                break
+                
+        if not url.endswith('/videos'):
             url += '/videos'
 
         ydl_opts = {

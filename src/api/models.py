@@ -13,7 +13,6 @@ from pydantic import BaseModel, Field
 class ChannelAnalyzeRequest(BaseModel):
     """Request to analyze a YouTube channel"""
     url: str = Field(..., description="YouTube channel URL")
-    include_playlists: bool = Field(default=False, description="Include playlist organization")
     max_videos: int = Field(default=500, description="Maximum videos to fetch")
 
 
@@ -40,6 +39,7 @@ class VideoInfo(BaseModel):
     duration: Optional[int] = None
     thumbnail: Optional[str] = None
     published_at: Optional[str] = None
+    playlist_name: Optional[str] = None
 
 
 class PlaylistInfo(BaseModel):

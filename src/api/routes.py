@@ -24,6 +24,7 @@ from services.duplicate_filter import DuplicateFilter
 from services.updater import YtdlpUpdater
 from utils.config import Config
 from utils.validators import is_valid_youtube_url, normalize_input, extract_video_id, extract_playlist_id
+from utils.key_manager import load_api_key_from_file, save_api_key_to_file, delete_api_key_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ def initialize_services(api_key: str = None):
     """Initialize services with API key"""
     global youtube_service
 
-    api_key = api_key or Config.YOUTUBE_API_KEY
+    # Try config first, then saved file
+    api_key = api_key or Config.YOUTUBE_API_KEY or load_api_key_from_file()
 
     if api_key:
         youtube_service = YouTubeAPIService(api_key)
@@ -75,6 +77,8 @@ async def set_api_key(request: APIKeyRequest):
         else:
             youtube_service = YouTubeAPIService(api_key)
 
+        save_api_key_to_file(api_key)
+
         logger.info("YouTube API key updated via settings")
         return APIKeyResponse(
             success=True,
@@ -84,6 +88,20 @@ async def set_api_key(request: APIKeyRequest):
     except Exception as e:
         logger.error(f"Failed to set API key: {e}")
         raise HTTPException(status_code=400, detail=f"API 키 설정 실패: {e}")
+
+
+@router.delete("/settings/api-key", response_model=APIKeyResponse)
+async def delete_api_key():
+    """Remove YouTube Data API key at runtime"""
+    global youtube_service
+    youtube_service = None
+    delete_api_key_from_file()
+    logger.info("YouTube API key removed via settings")
+    return APIKeyResponse(
+        success=True,
+        has_api_key=False,
+        message="API 키가 삭제되어 yt-dlp 모드로 전환되었습니다."
+    )
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -152,7 +170,10 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
             channel_id = youtube_service.extract_channel_id(request.url)
 
             if not channel_id:
-                channel_id = youtube_service.get_channel_id_from_username(request.url)
+                # Extract username and fetch channel ID
+                username = youtube_service.extract_username(request.url)
+                if username:
+                    channel_id = youtube_service.get_channel_id_from_username(username)
 
             if channel_id:
                 logger.info(f"Analyzing channel via API: {channel_id}")
@@ -167,7 +188,7 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
             channel_name = channel_meta.get('channel', '')
 
             # Extract channel_id from URL for download path
-            channel_id = YouTubeAPIService.extract_channel_id(request.url) or "unknown_channel"
+            channel_id = YouTubeAPIService.extract_channel_id(request.url) or YouTubeAPIService.extract_username(request.url) or "unknown_channel"
 
         if not videos:
             return ChannelAnalyzeResponse(
@@ -201,12 +222,6 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
 
         # Get playlists if requested (only with API)
         playlists = []
-        if request.include_playlists and youtube_service and channel_id:
-            playlist_data = youtube_service.get_channel_playlists(channel_id)
-            playlists = [
-                PlaylistInfo(id=p['id'], title=p['title'], video_count=0)
-                for p in playlist_data
-            ]
 
         source = "yt-dlp" if use_fallback else "YouTube API"
         return ChannelAnalyzeResponse(
@@ -230,6 +245,155 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@router.post("/channel/playlists/analyze", response_model=ChannelAnalyzeResponse)
+async def analyze_channel_playlists(request: ChannelAnalyzeRequest):
+    """Analyze a YouTube channel's playlists and get all videos grouped by playlist"""
+    request.url = normalize_input(request.url)
+    if not is_valid_youtube_url(request.url):
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+    try:
+        channel_id = None
+        channel_name = ''
+        videos_list = []
+        use_fallback = not youtube_service
+
+        if not use_fallback:
+            channel_id = youtube_service.extract_channel_id(request.url)
+            if not channel_id:
+                username = youtube_service.extract_username(request.url)
+                if username:
+                    channel_id = youtube_service.get_channel_id_from_username(username)
+            
+            if channel_id:
+                logger.info(f"Analyzing channel playlists via API: {channel_id}")
+                # Fetch all playlists
+                playlists = youtube_service.get_channel_playlists(channel_id)
+                for pl in playlists:
+                    pl_videos = youtube_service.get_playlist_videos(pl['id'], request.max_videos)
+                    for v in pl_videos:
+                        videos_list.append({
+                            'id': v['id'],
+                            'title': v['title'],
+                            'publishedAt': v.get('publishedAt'),
+                            'playlist_name': pl['title']
+                        })
+            else:
+                use_fallback = True
+
+        if use_fallback:
+            # Fallback for playlists is complex with yt-dlp, we will try to use yt-dlp on the /playlists URL directly
+            # which usually yields playlists. Then we extract videos.
+            logger.info(f"Using yt-dlp fallback for channel playlists analysis: {request.url}")
+            
+            import yt_dlp
+            # Make sure url ends with /playlists
+            url = request.url.rstrip('/')
+            if not url.endswith('/playlists'):
+                if url.endswith('/videos'):
+                    url = url[:-7]
+                url += '/playlists'
+                
+            ydl_opts = {'quiet': True, 'extract_flat': True}
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    channel_name = info.get('channel', '') or info.get('uploader', '')
+                    channel_id = info.get('channel_id', 'unknown_channel')
+                    
+                    entries = info.get('entries', [])
+                    for pl_entry in entries:
+                        pl_title = pl_entry.get('title', 'Unknown Playlist')
+                        pl_url = pl_entry.get('url')
+                        if pl_url:
+                            pl_info = ydl.extract_info(pl_url, download=False)
+                            for v_entry in pl_info.get('entries', []):
+                                if v_entry and v_entry.get('id'):
+                                    videos_list.append({
+                                        'id': v_entry['id'],
+                                        'title': v_entry.get('title', 'Unknown'),
+                                        'playlist_name': pl_title
+                                    })
+            except Exception as e:
+                logger.error(f"yt-dlp fallback failed for playlists: {e}")
+
+        if not videos_list:
+            return ChannelAnalyzeResponse(
+                success=True,
+                channel_id=channel_id,
+                message="No playlist videos found"
+            )
+
+        total_videos = len(videos_list)
+
+        # Deduplicate - wait, we might have same video in multiple playlists. 
+        # If user wants them in separate folders, we SHOULD NOT deduplicate across playlists, 
+        # or we only deduplicate exact same video in the exact same playlist.
+        # Let's deduplicate by (id, playlist_name)
+        unique_vids = []
+        seen = set()
+        for v in videos_list:
+            key = (v['id'], v.get('playlist_name', ''))
+            if key not in seen:
+                seen.add(key)
+                unique_vids.append(v)
+                
+        videos_list = unique_vids
+        unique_videos = len(videos_list)
+        duplicates_removed = total_videos - unique_videos
+
+        # Check for already downloaded
+        to_download_vids = []
+        already_downloaded = 0
+        from utils.config import Config
+        for v in videos_list:
+            safe_chan = channel_name or channel_id or "Unknown Channel"
+            safe_pl = v.get('playlist_name') or "Unknown Playlist"
+            download_path = Config.get_download_path(safe_chan, safe_pl)
+            
+            # Check if file exists (duplicate_filter logic for single file)
+            # Actually DuplicateFilter expects a list of IDs. We can check manually or use filter.
+            # It's easier to use the filter per video.
+            res = duplicate_filter.filter_already_downloaded([v], str(download_path))
+            if res:
+                to_download_vids.append(v)
+            else:
+                already_downloaded += 1
+                
+        to_download = len(to_download_vids)
+
+        video_infos = [
+            VideoInfo(
+                id=v['id'],
+                title=v['title'],
+                published_at=v.get('publishedAt'),
+                playlist_name=v.get('playlist_name')
+            )
+            for v in to_download_vids
+        ]
+
+        source = "yt-dlp" if use_fallback else "YouTube API"
+        return ChannelAnalyzeResponse(
+            success=True,
+            channel_id=channel_id,
+            channel_name=channel_name or None,
+            total_videos=total_videos,
+            unique_videos=unique_videos,
+            duplicates_removed=duplicates_removed,
+            already_downloaded=already_downloaded,
+            to_download=to_download,
+            videos=video_infos,
+            message=f"Found {to_download} videos to download (via {source})"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing channel playlists: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/playlist/analyze", response_model=PlaylistAnalyzeResponse)
 async def analyze_playlist(request: PlaylistAnalyzeRequest):
     """Analyze a YouTube playlist"""
@@ -246,6 +410,10 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
         if not use_fallback:
             try:
                 videos = youtube_service.get_playlist_videos(playlist_id, request.max_videos)
+                info = youtube_service.get_playlist_info(playlist_id)
+                if info:
+                    playlist_meta['playlist_title'] = info.get('title', '')
+                    playlist_meta['channel'] = info.get('channelTitle', '')
             except Exception as e:
                 logger.warning(f"API playlist fetch failed, falling back to yt-dlp: {e}")
                 use_fallback = True
@@ -272,7 +440,9 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
         duplicates_removed = total_videos - unique_videos
 
         # Check for already downloaded
-        download_path = Config.get_download_path(playlist_id or "unknown_playlist")
+        safe_channel_name = channel_name or "Unknown Channel"
+        safe_playlist_name = playlist_name or playlist_id or "Unknown Playlist"
+        download_path = Config.get_download_path(safe_channel_name, safe_playlist_name)
         videos = duplicate_filter.filter_already_downloaded(videos, str(download_path))
         to_download = len(videos)
         already_downloaded = unique_videos - to_download
@@ -317,11 +487,7 @@ async def start_download(request: DownloadExtractRequest):
         logger.info(f"Starting server-side download for: {request.video_id} ({request.quality})")
 
         # 채널명/플레이리스트명 폴더 구조 구성
-        output_dir = str(Config.DOWNLOADS_DIR)
-        if request.channel_name:
-            output_dir = str(Config.DOWNLOADS_DIR / request.channel_name)
-            if request.playlist_name:
-                output_dir = str(Config.DOWNLOADS_DIR / request.channel_name / request.playlist_name)
+        output_dir = str(Config.get_download_path(request.channel_name or "", request.playlist_name or ""))
 
         filepath = await asyncio.to_thread(
             downloader.download_video, request.video_id, request.quality, output_dir

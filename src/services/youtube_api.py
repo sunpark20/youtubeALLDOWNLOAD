@@ -54,13 +54,7 @@ class YouTubeAPIService:
     @staticmethod
     def extract_channel_id(url: str) -> Optional[str]:
         """
-        Extract channel ID from YouTube URL
-
-        Supports:
-        - https://www.youtube.com/channel/UC...
-        - https://www.youtube.com/@username
-        - https://www.youtube.com/c/channelname
-        - https://www.youtube.com/user/username
+        Extract channel ID (UC...) from YouTube URL
 
         Args:
             url: YouTube channel URL
@@ -68,22 +62,46 @@ class YouTubeAPIService:
         Returns:
             Channel ID or None
         """
+        if not url:
+            return None
+
         # Already a channel ID
         if url.startswith('UC') and len(url) == 24:
             return url
 
         # Extract from URL
+        match = re.search(r'youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})', url)
+        if match:
+            return match.group(1)
+
+        return None
+
+    @staticmethod
+    def extract_username(url: str) -> Optional[str]:
+        """
+        Extract username or handle from YouTube URL
+        
+        Args:
+            url: YouTube channel URL
+            
+        Returns:
+            Username/handle or None
+        """
+        if not url:
+            return None
+            
         patterns = [
-            r'youtube\.com/channel/([a-zA-Z0-9_-]+)',
-            r'youtube\.com/@([a-zA-Z0-9_-]+)',
-            r'youtube\.com/c/([a-zA-Z0-9_-]+)',
-            r'youtube\.com/user/([a-zA-Z0-9_-]+)',
+            r'youtube\.com/@([^/?&#]+)',
+            r'youtube\.com/c/([^/?&#]+)',
+            r'youtube\.com/user/([^/?&#]+)',
         ]
 
         for pattern in patterns:
             match = re.search(pattern, url)
             if match:
-                return match.group(1)
+                # URL decode in case of Korean/special characters (e.g. %EC%BD%A4%EB%AF%80)
+                from urllib.parse import unquote
+                return unquote(match.group(1))
 
         return None
 
@@ -163,6 +181,42 @@ class YouTubeAPIService:
             return None
         except Exception as e:
             logger.error(f"Error getting uploads playlist: {e}")
+            return None
+
+    def get_playlist_info(self, playlist_id: str) -> Optional[Dict]:
+        """
+        Get playlist metadata (title, channel)
+
+        Args:
+            playlist_id: YouTube playlist ID
+
+        Returns:
+            Dict containing playlist title and channel title, or None
+        """
+        if not self.youtube:
+            logger.error("YouTube API client not initialized")
+            return None
+
+        try:
+            request = self.youtube.playlists().list(
+                part='snippet',
+                id=playlist_id
+            )
+            response = request.execute()
+
+            if response.get('items'):
+                snippet = response['items'][0]['snippet']
+                return {
+                    'title': snippet.get('title', ''),
+                    'channelTitle': snippet.get('channelTitle', '')
+                }
+            return None
+
+        except HttpError as e:
+            logger.error(f"YouTube API error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting playlist info: {e}")
             return None
 
     def get_playlist_videos(self, playlist_id: str, max_results: int = 500) -> List[Dict]:

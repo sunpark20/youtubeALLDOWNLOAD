@@ -17,7 +17,6 @@ let isDownloading = false;
 // DOM Elements
 const elements = {
     channelUrl: document.getElementById('channelUrl'),
-    includePlaylists: document.getElementById('includePlaylists'),
     maxVideos: document.getElementById('maxVideos'),
     quality: document.getElementById('quality'),
     analyzeBtn: document.getElementById('analyzeBtn'),
@@ -47,6 +46,7 @@ const elements = {
     settingsPanel: document.getElementById('settingsPanel'),
     apiKeyInput: document.getElementById('apiKeyInput'),
     saveApiKeyBtn: document.getElementById('saveApiKeyBtn'),
+    deleteApiKeyBtn: document.getElementById('deleteApiKeyBtn'),
     apiKeyMessage: document.getElementById('apiKeyMessage'),
     apiKeyStatus: document.getElementById('apiKeyStatus'),
 
@@ -62,6 +62,20 @@ const elements = {
 async function init() {
     console.log('Initializing YouTube ALL DOWNLOADER...');
 
+    // Load saved API key from localStorage
+    const savedApiKey = localStorage.getItem('youtube_api_key');
+    if (savedApiKey) {
+        try {
+            await fetch(`${API_BASE}/settings/api-key`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: savedApiKey }),
+            });
+        } catch (e) {
+            console.error('Failed to restore API key:', e);
+        }
+    }
+
     // Check health and settings
     await checkHealth();
     await checkApiKeyStatus();
@@ -71,6 +85,9 @@ async function init() {
     elements.downloadAllBtn.addEventListener('click', downloadAll);
     elements.settingsBtn.addEventListener('click', toggleSettings);
     elements.saveApiKeyBtn.addEventListener('click', saveApiKey);
+    if (elements.deleteApiKeyBtn) {
+        elements.deleteApiKeyBtn.addEventListener('click', deleteApiKey);
+    }
     elements.helpBtn.addEventListener('click', () => elements.helpModal.style.display = 'flex');
     elements.helpCloseBtn.addEventListener('click', () => elements.helpModal.style.display = 'none');
     elements.helpModal.addEventListener('click', (e) => {
@@ -89,9 +106,6 @@ async function checkHealth() {
         const data = await response.json();
 
         if (data.status === 'healthy') {
-            elements.statusText.textContent = '준비 완료';
-            elements.statusText.style.color = '#28a745';
-
             if (data.ytdlp_version) {
                 elements.ytdlpVersion.textContent = `yt-dlp ${data.ytdlp_version}`;
             }
@@ -100,8 +114,6 @@ async function checkHealth() {
         console.log('Health check:', data);
     } catch (error) {
         console.error('Health check failed:', error);
-        elements.statusText.textContent = '서버 연결 실패';
-        elements.statusText.style.color = '#dc3545';
     }
 }
 
@@ -111,6 +123,9 @@ async function checkHealth() {
 function detectUrlType(url) {
     if (url.includes('playlist?list=') || url.includes('&list=')) {
         return 'playlist';
+    }
+    if (url.endsWith('/playlists')) {
+        return 'channel_playlists';
     }
     return 'channel';
 }
@@ -136,18 +151,19 @@ async function analyzeUrl() {
     elements.analyzeBtn.querySelector('.btn-text').style.display = 'none';
     elements.analyzeBtn.querySelector('.btn-loader').style.display = 'inline';
     elements.resultsSection.style.display = 'none';
-    elements.statusText.textContent = urlType === 'playlist' ? '재생목록 분석 중...' : '채널 분석 중...';
+    
+    let endpoint = '/channel/analyze';
+    if (urlType === 'playlist') {
+        endpoint = '/playlist/analyze';
+    } else if (urlType === 'channel_playlists') {
+        endpoint = '/channel/playlists/analyze';
+    }
 
     try {
-        const endpoint = urlType === 'playlist' ? '/playlist/analyze' : '/channel/analyze';
         const body = {
             url: url,
             max_videos: parseInt(elements.maxVideos.value),
         };
-
-        if (urlType === 'channel') {
-            body.include_playlists = elements.includePlaylists.checked;
-        }
 
         const response = await fetch(`${API_BASE}${endpoint}`, {
             method: 'POST',
@@ -165,7 +181,6 @@ async function analyzeUrl() {
 
         if (data.success) {
             displayResults(data);
-            elements.statusText.textContent = '분석 완료';
         } else {
             throw new Error(data.message || '분석 실패');
         }
@@ -173,7 +188,6 @@ async function analyzeUrl() {
     } catch (error) {
         console.error('Error analyzing:', error);
         alert(`오류: ${error.message}`);
-        elements.statusText.textContent = '오류 발생';
     } finally {
         isAnalyzing = false;
         elements.analyzeBtn.disabled = false;
@@ -225,7 +239,7 @@ function renderVideoList(videos) {
         videoItem.innerHTML = `
             <div class="video-info">
                 <div class="video-title">${index + 1}. ${escapeHtml(video.title)}</div>
-                <div class="video-meta">ID: ${video.id}</div>
+                <div class="video-meta">ID: ${video.id}${video.playlist_name ? ` | 재생목록: ${escapeHtml(video.playlist_name)}` : ''}</div>
             </div>
         `;
         elements.videoList.appendChild(videoItem);
@@ -279,7 +293,7 @@ async function downloadAll() {
                     video_id: video.id,
                     quality: quality,
                     channel_name: currentChannelName || null,
-                    playlist_name: currentPlaylistName || null,
+                    playlist_name: video.playlist_name || currentPlaylistName || null,
                 }),
             });
 
@@ -341,11 +355,20 @@ async function checkApiKeyStatus() {
         const data = await response.json();
 
         if (data.has_api_key) {
-            elements.apiKeyStatus.textContent = 'API Key ✓';
+            elements.apiKeyStatus.textContent = 'API Key 적용됨';
             elements.apiKeyStatus.className = 'api-key-badge badge-active';
+            const savedApiKey = localStorage.getItem('youtube_api_key');
+            if (savedApiKey) {
+                elements.apiKeyInput.value = savedApiKey;
+            }
+            elements.apiKeyInput.placeholder = '•••••••••••••••••••••••••••••••• (설정됨)';
+            elements.apiKeyMessage.textContent = '현재 API 키가 등록되어 있습니다. 변경하려면 새 키를 입력하세요.';
+            elements.apiKeyMessage.className = 'settings-message success';
         } else {
-            elements.apiKeyStatus.textContent = 'yt-dlp 모드';
+            elements.apiKeyStatus.textContent = '톱니바퀴를 눌러 API 키를 추가하면 더 빠르게 분석할 수 있습니다.';
             elements.apiKeyStatus.className = 'api-key-badge badge-fallback';
+            elements.apiKeyInput.placeholder = 'YouTube Data API v3 키 입력';
+            elements.apiKeyMessage.textContent = '';
         }
     } catch (error) {
         console.error('Failed to check API key status:', error);
@@ -376,6 +399,7 @@ async function saveApiKey() {
         const data = await response.json();
 
         if (response.ok && data.success) {
+            localStorage.setItem('youtube_api_key', apiKey);
             elements.apiKeyMessage.textContent = data.message;
             elements.apiKeyMessage.className = 'settings-message success';
             elements.apiKeyInput.value = '';
@@ -388,6 +412,38 @@ async function saveApiKey() {
         elements.apiKeyMessage.className = 'settings-message error';
     } finally {
         elements.saveApiKeyBtn.disabled = false;
+    }
+}
+
+/**
+ * Delete API key
+ */
+async function deleteApiKey() {
+    if (!confirm('저장된 API 키를 삭제하시겠습니까?')) return;
+
+    elements.deleteApiKeyBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/settings/api-key`, {
+            method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            localStorage.removeItem('youtube_api_key');
+            elements.apiKeyInput.value = '';
+            elements.apiKeyMessage.textContent = data.message;
+            elements.apiKeyMessage.className = 'settings-message success';
+            await checkApiKeyStatus();
+        } else {
+            throw new Error(data.message || 'API 키 삭제 실패');
+        }
+    } catch (error) {
+        elements.apiKeyMessage.textContent = error.message;
+        elements.apiKeyMessage.className = 'settings-message error';
+    } finally {
+        elements.deleteApiKeyBtn.disabled = false;
     }
 }
 

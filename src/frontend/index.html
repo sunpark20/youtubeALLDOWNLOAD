@@ -14,9 +14,8 @@
                 <h1>🎬 YouTube ALL DOWNLOADER</h1>
                 <button id="settingsBtn" class="btn-icon" title="설정">⚙</button>
             </div>
-            <p class="subtitle">채널 전체 다운로드 · 중복 제거 · 재생목록별 폴더 구분</p>
+            <p class="subtitle">채널 전체 다운로드 · 중복 제거</p>
             <div id="status" class="status">
-                <span id="statusText">준비 완료</span>
                 <span id="ytdlpVersion" class="version"></span>
                 <span id="apiKeyStatus" class="api-key-badge"></span>
             </div>
@@ -30,6 +29,7 @@
                 <div class="api-key-form">
                     <input type="password" id="apiKeyInput" placeholder="YouTube Data API v3 키 입력" autocomplete="off">
                     <button id="saveApiKeyBtn" class="btn btn-save">저장</button>
+                    <button id="deleteApiKeyBtn" class="btn btn-danger" style="margin-left: 8px;">삭제</button>
                 </div>
                 <p id="apiKeyMessage" class="settings-message"></p>
             </div>
@@ -50,18 +50,9 @@
                         placeholder="@채널명 또는 재생목록 URL을 입력하세요"
                         autocomplete="off"
                     >
-                    <div class="input-examples">
-                        <span class="example-tag">예: @콤므</span>
-                        <span class="example-tag">예: https://www.youtube.com/playlist?list=PL...</span>
-                    </div>
                 </div>
 
                 <div class="options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="includePlaylists">
-                        재생목록별 폴더 구분
-                    </label>
-
                     <div class="form-group inline">
                         <label for="maxVideos">최대 영상 수:</label>
                         <input type="number" id="maxVideos" value="500" min="1" max="10000">
@@ -95,30 +86,22 @@
                         <div class="help-section">
                             <h4>1. 채널 전체 다운로드 (@채널명)</h4>
                             <p style="margin-bottom: 8px;">YouTube 채널 페이지에서 <strong>@핸들</strong>을 복사해서 입력하세요.</p>
-                            <img src="/static/images/channel-handle-guide.png" alt="채널 핸들 위치 안내" style="width: 100%; max-width: 420px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <img src="/static/images/channel-handle-guide.png" alt="채널 핸들 위치 안내" style="width: 100%; max-width: 600px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
                             <p class="help-url" style="margin-top: 4px;">입력 예시: <strong>@콤므</strong></p>
-                            <div class="help-option">
-                                <span class="help-check checked">&#10003;</span>
-                                <div>
-                                    <strong>재생목록별 폴더 구분 체크</strong>
-                                    <p>@채널명 폴더 안에 재생목록별 하위 폴더를 만들어 다운로드합니다.</p>
-                                    <code>@채널명/재생목록A/영상1.mp4</code>
-                                </div>
-                            </div>
-                            <div class="help-option">
-                                <span class="help-check">&#10007;</span>
-                                <div>
-                                    <strong>재생목록별 폴더 구분 체크 해제</strong>
-                                    <p>모든 영상을 @채널명 폴더 하나에 다운로드합니다.</p>
-                                    <code>@채널명/영상1.mp4</code>
-                                </div>
-                            </div>
                         </div>
                         <hr class="help-divider">
                         <div class="help-section">
                             <h4>2. 재생목록 다운로드</h4>
-                            <p class="help-url">https://www.youtube.com/playlist?list=<strong>PLxxxxxxx</strong></p>
-                            <p>특정 재생목록의 모든 영상을 다운로드합니다.</p>
+                            <p style="margin-bottom: 8px;">전체 재생목록을 폴더별로 다운로드합니다.</p>
+                            <img src="/static/images/playlist-guide.png" alt="재생목록 위치 안내" style="width: 100%; max-width: 600px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <p class="help-url" style="margin-top: 4px;">입력 예시: https://www.youtube.com/playlist?list=<strong>PLxxxxxxx</strong></p>
+                        </div>
+                        <hr class="help-divider">
+                        <div class="help-section">
+                            <h4>3. 개별 플레이리스트 다운로드</h4>
+                            <p style="margin-bottom: 8px;">특정 재생목록 내의 영상을 채널명/재생목록명 폴더에 다운로드합니다.</p>
+                            <img src="/static/images/individual-playlist-guide.png" alt="개별 플레이리스트 위치 안내" style="width: 100%; max-width: 600px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <p class="help-url" style="margin-top: 4px;">입력 예시: https://www.youtube.com/watch?v=xxx&amp;list=<strong>PLxxxxxxx</strong></p>
                         </div>
                     </div>
                 </div>
