@@ -279,23 +279,34 @@ class YouTubeDownloader:
 
         os.makedirs(output_dir, exist_ok=True)
 
+        # 파일명에 [video_id] 포함 → 중복 검출에 사용
+        outtmpl = os.path.join(output_dir, '%(title)s [%(id)s].%(ext)s')
+
         if quality == 'audio':
-            format_string = 'bestaudio[ext=m4a]/bestaudio'
+            format_string = 'bestaudio/best'
+            ydl_opts = {
+                **self.ydl_opts_base,
+                'format': format_string,
+                'outtmpl': outtmpl,
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
         else:
             height = quality.replace('p', '') if quality != 'best' else ''
             if height:
-                format_string = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={height}][ext=mp4]/best'
+                format_string = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
             else:
-                format_string = 'best[ext=mp4]/best'
+                format_string = 'bestvideo+bestaudio/best'
 
-        ydl_opts = {
-            **self.ydl_opts_base,
-            'format': format_string,
-            'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
-        }
-
-        if quality != 'audio':
-            ydl_opts['merge_output_format'] = 'mp4'
+            ydl_opts = {
+                **self.ydl_opts_base,
+                'format': format_string,
+                'outtmpl': outtmpl,
+                'merge_output_format': 'mp4',
+            }
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -304,8 +315,12 @@ class YouTubeDownloader:
                     return None
 
                 filepath = ydl.prepare_filename(info)
-                # 병합 시 확장자가 바뀔 수 있으므로 mp4로 변경
-                if quality != 'audio':
+                # 오디오: mp3 변환 후 확장자 변경
+                if quality == 'audio':
+                    base, _ = os.path.splitext(filepath)
+                    filepath = base + '.mp3'
+                else:
+                    # 병합 시 확장자가 바뀔 수 있으므로 mp4로 변경
                     base, _ = os.path.splitext(filepath)
                     filepath = base + '.mp4'
 

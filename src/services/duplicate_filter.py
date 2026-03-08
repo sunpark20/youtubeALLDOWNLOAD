@@ -125,33 +125,98 @@ class DuplicateFilter:
 
     def is_file_downloaded(self, video_id: str, directory: str) -> bool:
         """
-        Check if video is already downloaded
-
-        Simple filename-based check (faster than hash)
+        Check if video is already downloaded (by archive + actual file existence)
 
         Args:
             video_id: YouTube video ID
             directory: Download directory
 
         Returns:
-            True if file exists with video_id in filename
+            True if file actually exists
         """
         if not os.path.exists(directory):
             return False
 
+        from services.download_archive import get_archive
+        archive = get_archive(directory)
+
+        # Scan filenames for [video_id] pattern (ground truth)
+        file_exists = False
         try:
             for filename in os.listdir(directory):
-                # Check if video_id is in filename
-                # YouTube video files usually contain the ID
-                if video_id in filename:
-                    logger.debug(f"Video {video_id} already exists: {filename}")
-                    return True
-
-            return False
-
+                if f'[{video_id}]' in filename:
+                    file_exists = True
+                    break
         except Exception as e:
             logger.error(f"Error checking local files: {e}")
-            return False
+
+        if file_exists:
+            # Ensure archive is in sync
+            if not archive.has_video(video_id):
+                archive.add_video(video_id)
+            return True
+
+        # File not found — if archive says it exists, it's stale, remove it
+        if archive.has_video(video_id):
+            archive.remove_video(video_id)
+            logger.info(f"File deleted locally, removed from archive: {video_id}")
+
+        return False
+
+    # yt-dlp 전각 문자 치환 매핑 (파일 저장 시 사용)
+    _FULLWIDTH_MAP = str.maketrans({
+        '？': '?', '＂': '"', '｜': '|', '＊': '*',
+        '＜': '<', '＞': '>', '：': ':', '／': '/',
+        '＼': '\\', '～': '~',
+    })
+
+    @staticmethod
+    def _normalize_title(title: str) -> str:
+        """Normalize a title for comparison.
+
+        yt-dlp converts ?→？, :→： etc. when saving files, but returns
+        original half-width characters in API responses. We strip all
+        special characters and whitespace so both forms match.
+        """
+        import re
+        import unicodedata
+        # Remove known media file extensions only
+        _MEDIA_EXTS = {'.mp4', '.webm', '.mkv', '.avi', '.mov',
+                       '.mp3', '.m4a', '.opus', '.ogg', '.wav'}
+        _, ext = os.path.splitext(title)
+        if ext.lower() in _MEDIA_EXTS:
+            title = title[:-len(ext)]
+        # Remove [video_id] pattern if present
+        title = re.sub(r'\s*\[[a-zA-Z0-9_-]{11}\]$', '', title)
+        # Convert full-width chars to half-width equivalents
+        title = title.translate(DuplicateFilter._FULLWIDTH_MAP)
+        # NFKC normalization (handles remaining full-width alphanumerics etc.)
+        title = unicodedata.normalize('NFKC', title)
+        # Lowercase
+        title = title.lower()
+        # Keep only Unicode letters and digits (handles Korean, Japanese, CJK, etc.)
+        title = re.sub(r'[^\w]', '', title, flags=re.UNICODE)
+        # Remove underscores (kept by \w)
+        title = title.replace('_', '')
+        return title
+
+    def _get_existing_titles(self, directory: str) -> set:
+        """Get set of normalized titles of existing files in directory"""
+        titles = set()
+        if not os.path.exists(directory):
+            return titles
+
+        video_extensions = {'.mp4', '.webm', '.mkv', '.avi', '.mov',
+                            '.mp3', '.m4a', '.opus', '.ogg', '.wav'}
+
+        for filename in os.listdir(directory):
+            _, ext = os.path.splitext(filename)
+            if ext.lower() in video_extensions:
+                normalized = self._normalize_title(filename)
+                if normalized:
+                    titles.add(normalized)
+
+        return titles
 
     def filter_already_downloaded(
         self,
@@ -160,6 +225,11 @@ class DuplicateFilter:
     ) -> List[Dict]:
         """
         Filter out videos that are already downloaded
+
+        Checks in order:
+        1. download_archive.txt (fast, for new-format files)
+        2. [video_id] in filename (new format)
+        3. Title match (legacy files without video_id in name)
 
         Args:
             videos: List of video dictionaries
@@ -172,6 +242,10 @@ class DuplicateFilter:
             logger.info("Download directory doesn't exist, no files to skip")
             return videos
 
+        # Pre-scan: get existing file titles for legacy matching
+        existing_titles = self._get_existing_titles(download_directory)
+        logger.info(f"Found {len(existing_titles)} existing files in {download_directory}")
+
         new_videos = []
         skipped = 0
 
@@ -181,11 +255,24 @@ class DuplicateFilter:
             if not video_id:
                 continue
 
-            if not self.is_file_downloaded(video_id, download_directory):
-                new_videos.append(video)
-            else:
+            # Check 1 & 2: archive + filename ID check
+            if self.is_file_downloaded(video_id, download_directory):
                 skipped += 1
-                logger.info(f"Skipping already downloaded: {video.get('title', video_id)}")
+                logger.info(f"Skipping already downloaded (ID match): {video.get('title', video_id)}")
+                continue
+
+            # Check 3: Legacy title match
+            video_title = video.get('title', '')
+            if video_title and self._normalize_title(video_title) in existing_titles:
+                skipped += 1
+                # Also add to archive so future checks are faster
+                from services.download_archive import get_archive
+                archive = get_archive(download_directory)
+                archive.add_video(video_id)
+                logger.info(f"Skipping already downloaded (title match): {video_title}")
+                continue
+
+            new_videos.append(video)
 
         logger.info(f"Filtered {skipped} already downloaded video(s)")
         logger.info(f"New videos to download: {len(new_videos)}")

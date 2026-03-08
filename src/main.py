@@ -133,6 +133,11 @@ def main():
 
 
 if __name__ == "__main__":
+    # Add freeze_support to prevent fork bombs (infinite window spawning)
+    # when pyinstaller packaged app uses multiprocessing on macOS/Windows
+    import multiprocessing
+    multiprocessing.freeze_support()
+
     try:
         main()
     except Exception as e:

@@ -261,6 +261,10 @@ class YouTubeAPIService:
                     break
 
             logger.info(f"Retrieved {len(videos)} videos from playlist {playlist_id}")
+
+            # Fetch duration info for all videos
+            self._enrich_with_duration(videos)
+
             return videos
 
         except HttpError as e:
@@ -269,6 +273,48 @@ class YouTubeAPIService:
         except Exception as e:
             logger.error(f"Error getting playlist videos: {e}")
             return videos
+
+    def _enrich_with_duration(self, videos: List[Dict]):
+        """
+        Fetch duration (in seconds) for a list of videos and add 'duration' key.
+        Uses videos().list(part='contentDetails') in batches of 50.
+        """
+        if not self.youtube or not videos:
+            return
+
+        video_ids = [v['id'] for v in videos]
+        duration_map = {}
+
+        try:
+            for i in range(0, len(video_ids), 50):
+                batch = video_ids[i:i + 50]
+                request = self.youtube.videos().list(
+                    part='contentDetails',
+                    id=','.join(batch)
+                )
+                response = request.execute()
+
+                for item in response.get('items', []):
+                    vid_id = item['id']
+                    duration_str = item['contentDetails']['duration']
+                    duration_map[vid_id] = self._parse_iso8601_duration(duration_str)
+
+            for v in videos:
+                v['duration'] = duration_map.get(v['id'])
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch video durations: {e}")
+
+    @staticmethod
+    def _parse_iso8601_duration(duration: str) -> int:
+        """Parse ISO 8601 duration (e.g. PT1H2M30S) to seconds"""
+        match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
+        if not match:
+            return 0
+        hours = int(match.group(1) or 0)
+        minutes = int(match.group(2) or 0)
+        seconds = int(match.group(3) or 0)
+        return hours * 3600 + minutes * 60 + seconds
 
     def get_channel_videos(self, channel_id: str, max_results: int = 500) -> List[Dict]:
         """

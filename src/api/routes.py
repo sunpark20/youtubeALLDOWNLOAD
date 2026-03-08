@@ -197,6 +197,10 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
                 message="No videos found in channel"
             )
 
+        # Filter Shorts (≤180s) when using API and include_shorts is False
+        if not request.include_shorts and not use_fallback:
+            videos = [v for v in videos if (v.get('duration') or 999) > 180]
+
         total_videos = len(videos)
 
         # Deduplicate
@@ -205,7 +209,8 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
         duplicates_removed = total_videos - unique_videos
 
         # Check for already downloaded
-        download_path = Config.get_download_path(channel_id)
+        safe_channel_name = channel_name or channel_id or "Unknown Channel"
+        download_path = Config.get_download_path(safe_channel_name)
         videos = duplicate_filter.filter_already_downloaded(videos, str(download_path))
         to_download = len(videos)
         already_downloaded = unique_videos - to_download
@@ -482,6 +487,7 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
 async def start_download(request: DownloadExtractRequest):
     """
     Server-side download: yt-dlp로 파일을 직접 다운로드하여 저장
+    이미 다운로드된 파일은 스킵 처리
     """
     try:
         logger.info(f"Starting server-side download for: {request.video_id} ({request.quality})")
@@ -489,12 +495,23 @@ async def start_download(request: DownloadExtractRequest):
         # 채널명/플레이리스트명 폴더 구조 구성
         output_dir = str(Config.get_download_path(request.channel_name or "", request.playlist_name or ""))
 
+        # 스킵 체크: 이미 다운로드된 파일인지 확인
+        from services.download_archive import get_archive
+        archive = get_archive(output_dir)
+
+        if archive.has_video(request.video_id) or duplicate_filter.is_file_downloaded(request.video_id, output_dir):
+            logger.info(f"Skipping already downloaded: {request.video_id}")
+            return {"success": True, "skipped": True, "message": "이미 다운로드됨 (스킵)"}
+
+        # 실제 다운로드 수행
         filepath = await asyncio.to_thread(
             downloader.download_video, request.video_id, request.quality, output_dir
         )
 
         if filepath:
-            return {"success": True, "message": "다운로드 완료", "filepath": filepath}
+            # 다운로드 성공 → 아카이브에 기록
+            archive.add_video(request.video_id)
+            return {"success": True, "skipped": False, "message": "다운로드 완료", "filepath": filepath}
         else:
             raise HTTPException(status_code=500, detail="다운로드 실패")
 
@@ -502,6 +519,36 @@ async def start_download(request: DownloadExtractRequest):
         raise
     except Exception as e:
         logger.error(f"Error in server-side download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/open-folder")
+async def open_folder(request: dict):
+    """Open a folder in the system file manager"""
+    import subprocess
+    import platform
+    import os
+
+    folder_path = request.get("path", "")
+    if not folder_path:
+        raise HTTPException(status_code=400, detail="경로가 비어있습니다.")
+
+    # Expand ~ to home directory
+    folder_path = os.path.expanduser(folder_path)
+
+    if not os.path.isdir(folder_path):
+        raise HTTPException(status_code=404, detail="폴더가 존재하지 않습니다.")
+
+    try:
+        system = platform.system()
+        if system == "Darwin":
+            subprocess.Popen(["open", folder_path])
+        elif system == "Windows":
+            subprocess.Popen(["explorer", folder_path])
+        else:
+            subprocess.Popen(["xdg-open", folder_path])
+        return {"success": True}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 

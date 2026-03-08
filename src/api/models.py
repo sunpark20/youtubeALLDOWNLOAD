@@ -14,6 +14,7 @@ class ChannelAnalyzeRequest(BaseModel):
     """Request to analyze a YouTube channel"""
     url: str = Field(..., description="YouTube channel URL")
     max_videos: int = Field(default=500, description="Maximum videos to fetch")
+    include_shorts: bool = Field(default=False, description="Include Shorts (≤180s) in results")
 
 
 class PlaylistAnalyzeRequest(BaseModel):

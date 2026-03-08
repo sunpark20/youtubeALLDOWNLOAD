@@ -26,6 +26,15 @@ class YtdlpUpdater:
         Returns:
             str: Version string (e.g., "2025.01.15") or None if not installed
         """
+        if getattr(sys, 'frozen', False):
+            try:
+                import yt_dlp.version
+                version = yt_dlp.version.__version__
+                self.current_version = version
+                return version
+            except ImportError:
+                return None
+
         try:
             result = subprocess.run(
                 [sys.executable, '-m', 'yt_dlp', '--version'],
@@ -57,6 +66,11 @@ class YtdlpUpdater:
         Returns:
             Tuple[bool, str]: (success, message)
         """
+        if getattr(sys, 'frozen', False):
+            message = "⚠️ yt-dlp auto-update disabled in packaged app"
+            logger.info(message)
+            return True, message
+
         try:
             logger.info("Starting yt-dlp update...")
 
@@ -103,6 +117,11 @@ class YtdlpUpdater:
         Returns:
             Tuple[bool, str]: (success, message)
         """
+        if getattr(sys, 'frozen', False):
+            message = "✅ yt-dlp auto-update disabled in packaged app"
+            logger.info(message)
+            return True, message
+
         logger.info("=" * 50)
         logger.info("yt-dlp Auto-Update Check")
         logger.info("=" * 50)

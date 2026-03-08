@@ -28,7 +28,7 @@ class Config:
     """Application configuration"""
 
     # Application
-    APP_NAME = "YouTube ALL DOWNLOADER"
+    APP_NAME = "YouTube BULK DOWNLOADER"
     APP_VERSION = "1.0.0"
 
     # Server
