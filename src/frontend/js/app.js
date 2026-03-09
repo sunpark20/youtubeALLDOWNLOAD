@@ -7,6 +7,30 @@
 // API Base URL
 const API_BASE = '/api';
 
+// Loading messages (Hearthstone-style witty messages)
+const LOADING_MESSAGES = [
+    '유튜브 서버를 설득하는 중...',
+    '인내는 쓰다. 그 열매는 달다.\n― 아리스토텔레스',
+    '서버 햄스터가 쳇바퀴를 돌리는 중...',
+    '천 리 길도 한 걸음부터.\n― 노자',
+    '데이터가 택배 기사를 기다리는 중...',
+    '급할수록 돌아가라.\n― 한국 속담',
+    '영상 목록이 줄을 서는 중...',
+    '시작이 반이다. 지금 반은 했다.',
+    '유튜브가 심호흡하는 중...',
+    '모든 위대한 일은 느리게 시작된다.\n― 토마스 칼라일',
+    '잠깐, 뭔가 대단한 일이 일어나고 있다...',
+    '기다림의 미학을 실천하는 중...',
+    '서버가 커피를 내리는 중...',
+    '좋은 것은 기다리는 자에게 온다.\n― 영국 속담',
+    '알고리즘이 워밍업하는 중...',
+    '빠른 것보다 정확한 게 낫다.',
+    '구글 서버에 정중하게 노크하는 중...',
+    '아직 여기 있다. 도망 안 갔다.',
+    '위대한 영상에는 위대한 인내가 필요하다.',
+    '잠깐이면 된다. 아마도. 거의. 곧.',
+];
+
 // State
 let currentVideos = [];
 let currentChannelName = '';
@@ -89,12 +113,24 @@ async function init() {
 
     // Setup event listeners
     elements.analyzeBtn.addEventListener('click', analyzeUrl);
+
+    // 키보드 흐름: URL 입력 → Enter → 화질 선택 → Enter → 분석 시작
+    elements.channelUrl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            elements.quality.focus();
+        }
+    });
+    elements.quality.addEventListener('change', () => {
+        elements.analyzeBtn.focus();
+    });
     elements.downloadAllBtn.addEventListener('click', downloadAll);
     elements.stopDownloadBtn.addEventListener('click', () => {
         if (isDownloading) {
             stopRequested = true;
             elements.stopDownloadBtn.disabled = true;
             elements.stopDownloadBtn.style.opacity = '0.5';
+            document.getElementById('stopWaitMsg').style.display = 'inline';
         }
     });
     elements.settingsBtn.addEventListener('click', toggleSettings);
@@ -107,10 +143,19 @@ async function init() {
     elements.helpModal.addEventListener('click', (e) => {
         if (e.target === elements.helpModal) elements.helpModal.style.display = 'none';
     });
+    document.getElementById('openDownloadFolderBtn').addEventListener('click', () => {
+        const savePath = currentChannelName
+            ? `~/Downloads/YouTubeDownloader/${currentChannelName}/${currentPlaylistName || ''}`
+            : '~/Downloads/YouTubeDownloader/';
+        openDownloadFolder(savePath);
+    });
     elements.completeCloseBtn.addEventListener('click', () => elements.completeModal.style.display = 'none');
     elements.completeModal.addEventListener('click', (e) => {
         if (e.target === elements.completeModal) elements.completeModal.style.display = 'none';
     });
+
+    // 시작 시 URL 입력창에 포커스
+    elements.channelUrl.focus();
 
     console.log('Application initialized!');
 }
@@ -169,8 +214,27 @@ async function analyzeUrl() {
     isAnalyzing = true;
     elements.analyzeBtn.disabled = true;
     elements.analyzeBtn.querySelector('.btn-text').style.display = 'none';
-    elements.analyzeBtn.querySelector('.btn-loader').style.display = 'inline';
+    const loaderEl = elements.analyzeBtn.querySelector('.btn-loader');
+    loaderEl.style.display = 'inline-block';
+    loaderEl.textContent = '분석 중...';
     elements.resultsSection.style.display = 'none';
+
+    // Show loading toast with rotating messages
+    const toast = document.getElementById('loadingToast');
+    const toastMsg = document.getElementById('loadingToastMsg');
+    let msgIndex = 0;
+    toastMsg.textContent = LOADING_MESSAGES[0];
+    toastMsg.classList.remove('fade-out');
+    toast.style.display = 'flex';
+
+    const msgInterval = setInterval(() => {
+        toastMsg.classList.add('fade-out');
+        setTimeout(() => {
+            msgIndex = (msgIndex + 1) % LOADING_MESSAGES.length;
+            toastMsg.textContent = LOADING_MESSAGES[msgIndex];
+            toastMsg.classList.remove('fade-out');
+        }, 300);
+    }, 2000);
 
     let endpoint = '/channel/analyze';
     if (urlType === 'playlist') {
@@ -213,10 +277,12 @@ async function analyzeUrl() {
         console.error('Error analyzing:', error);
         alert(`오류: ${error.message}`);
     } finally {
+        clearInterval(msgInterval);
+        toast.style.display = 'none';
         isAnalyzing = false;
         elements.analyzeBtn.disabled = false;
         elements.analyzeBtn.querySelector('.btn-text').style.display = 'inline';
-        elements.analyzeBtn.querySelector('.btn-loader').style.display = 'none';
+        loaderEl.style.display = 'none';
     }
 }
 
@@ -240,8 +306,9 @@ function displayResults(data) {
     // Show results section
     elements.resultsSection.style.display = 'block';
 
-    // Scroll to results
+    // Scroll to results and focus download button
     elements.resultsSection.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => elements.downloadAllBtn.focus(), 400);
 }
 
 /**
@@ -281,13 +348,10 @@ async function downloadAll() {
 
     if (isDownloading) return;
 
-    if (!confirm(`${currentVideos.length}개의 영상을 다운로드하시겠습니까?`)) {
-        return;
-    }
-
     isDownloading = true;
     stopRequested = false;
     elements.downloadAllBtn.disabled = true;
+    elements.analyzeBtn.disabled = true;
 
     // Show mini progress bar + stop button
     elements.progressWrap.style.display = 'flex';
@@ -377,7 +441,9 @@ async function downloadAll() {
     isDownloading = false;
     stopRequested = false;
     elements.downloadAllBtn.disabled = false;
+    elements.analyzeBtn.disabled = false;
     elements.progressWrap.style.display = 'none';
+    document.getElementById('stopWaitMsg').style.display = 'none';
 }
 
 /**

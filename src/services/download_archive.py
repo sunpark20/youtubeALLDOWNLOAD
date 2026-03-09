@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DownloadArchive:
     """Manages download archive for tracking downloaded videos"""
 
-    ARCHIVE_FILENAME = "download_archive.txt"
+    ARCHIVE_FILENAME = ".download_archive"
 
     def __init__(self, directory: str):
         self.directory = directory

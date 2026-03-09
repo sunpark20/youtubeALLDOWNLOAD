@@ -147,6 +147,41 @@ class YouTubeAPIService:
             logger.error(f"Error getting channel ID: {e}")
             return None
 
+    def get_channel_title(self, channel_id: str) -> Optional[str]:
+        """
+        Get channel title from channel ID
+
+        Args:
+            channel_id: YouTube channel ID
+
+        Returns:
+            Channel title or None
+        """
+        if not self.youtube:
+            logger.error("YouTube API client not initialized")
+            return None
+
+        try:
+            request = self.youtube.channels().list(
+                part='snippet',
+                id=channel_id
+            )
+            response = request.execute()
+
+            if response.get('items'):
+                title = response['items'][0]['snippet']['title']
+                logger.info(f"Channel title for {channel_id}: {title}")
+                return title
+
+            return None
+
+        except HttpError as e:
+            logger.error(f"YouTube API error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting channel title: {e}")
+            return None
+
     def get_uploads_playlist_id(self, channel_id: str) -> Optional[str]:
         """
         Get the uploads playlist ID for a channel

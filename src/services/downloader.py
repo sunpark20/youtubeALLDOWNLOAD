@@ -279,8 +279,8 @@ class YouTubeDownloader:
 
         os.makedirs(output_dir, exist_ok=True)
 
-        # 파일명에 [video_id] 포함 → 중복 검출에 사용
-        outtmpl = os.path.join(output_dir, '%(title)s [%(id)s].%(ext)s')
+        # 파일명: YYMMDD_영상제목 [video_id].확장자 (영상 업로드 날짜)
+        outtmpl = os.path.join(output_dir, '%(upload_date>%y%m%d)s_%(title)s [%(id)s].%(ext)s')
 
         if quality == 'audio':
             format_string = 'bestaudio/best'

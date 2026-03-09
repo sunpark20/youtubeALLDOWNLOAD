@@ -70,7 +70,7 @@
 
                 <div class="analyze-row">
                     <button id="analyzeBtn" class="btn btn-primary">
-                        <span class="btn-text">영상 목록 가져오기</span>
+                        <span class="btn-text">채널에서 목록 가져오기</span>
                         <span class="btn-loader" style="display: none;">분석 중...</span>
                     </button>
                     <label class="shorts-toggle">
@@ -78,6 +78,11 @@
                         <span class="toggle-switch"></span>
                         <span class="toggle-label">Shorts 포함 (3분 미만)</span>
                     </label>
+                </div>
+
+                <div id="loadingToast" class="loading-toast" style="display: none;">
+                    <div class="loading-toast-spinner"></div>
+                    <p id="loadingToastMsg" class="loading-toast-msg"></p>
                 </div>
             </section>
 
@@ -138,13 +143,17 @@
                         </div>
                         <span id="progressText" class="progress-text">0/0</span>
                         <button id="stopDownloadBtn" class="btn-stop" title="다운로드 중지">중단</button>
+                        <span id="stopWaitMsg" class="stop-wait-msg" style="display: none;">현재 진행중인 다운로드 완료중<span class="stop-wait-dots"></span></span>
                     </div>
                     <button id="downloadAllBtn" class="btn btn-success">
-                        <span class="btn-text">전체 다운로드</span>
+                        <span class="btn-text">다운로드 시작</span>
                     </button>
                 </div>
 
                 <div id="videoList" class="video-list"></div>
+                <div class="video-list-footer">
+                    <button id="openDownloadFolderBtn" class="btn-open-dl-folder">다운로드 폴더 열기</button>
+                </div>
             </section>
         </main>
 

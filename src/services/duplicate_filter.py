@@ -188,6 +188,8 @@ class DuplicateFilter:
             title = title[:-len(ext)]
         # Remove [video_id] pattern if present
         title = re.sub(r'\s*\[[a-zA-Z0-9_-]{11}\]$', '', title)
+        # Remove YYMMDD_ date prefix if present
+        title = re.sub(r'^\d{6}_', '', title)
         # Convert full-width chars to half-width equivalents
         title = title.translate(DuplicateFilter._FULLWIDTH_MAP)
         # NFKC normalization (handles remaining full-width alphanumerics etc.)

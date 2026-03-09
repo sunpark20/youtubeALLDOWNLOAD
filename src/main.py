@@ -130,6 +130,8 @@ def main():
         raise
     finally:
         logger.info("Application shut down")
+        import os
+        os._exit(0)
 
 
 if __name__ == "__main__":

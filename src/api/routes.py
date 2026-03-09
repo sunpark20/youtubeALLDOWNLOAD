@@ -176,7 +176,8 @@ async def analyze_channel(request: ChannelAnalyzeRequest):
                     channel_id = youtube_service.get_channel_id_from_username(username)
 
             if channel_id:
-                logger.info(f"Analyzing channel via API: {channel_id}")
+                channel_name = youtube_service.get_channel_title(channel_id) or channel_id
+                logger.info(f"Analyzing channel via API: {channel_id} ({channel_name})")
                 videos = youtube_service.get_channel_videos(channel_id, request.max_videos)
             else:
                 use_fallback = True
@@ -272,7 +273,8 @@ async def analyze_channel_playlists(request: ChannelAnalyzeRequest):
                     channel_id = youtube_service.get_channel_id_from_username(username)
             
             if channel_id:
-                logger.info(f"Analyzing channel playlists via API: {channel_id}")
+                channel_name = youtube_service.get_channel_title(channel_id) or channel_id
+                logger.info(f"Analyzing channel playlists via API: {channel_id} ({channel_name})")
                 # Fetch all playlists
                 playlists = youtube_service.get_channel_playlists(channel_id)
                 for pl in playlists:
@@ -427,8 +429,8 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
             logger.info(f"Using yt-dlp fallback for playlist analysis: {request.url}")
             videos, playlist_meta = downloader.get_playlist_videos(request.url, request.max_videos)
 
-        playlist_name = playlist_meta.get('playlist_title', '') if use_fallback else ''
-        channel_name = playlist_meta.get('channel', '') if use_fallback else ''
+        playlist_name = playlist_meta.get('playlist_title', '')
+        channel_name = playlist_meta.get('channel', '')
 
         if not videos:
             return PlaylistAnalyzeResponse(
