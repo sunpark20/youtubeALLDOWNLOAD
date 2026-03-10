@@ -48,9 +48,7 @@ body {
 }
 
 .version {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 4px 12px;
-    border-radius: 12px;
+    display: none;
 }
 
 /* Header Top */
@@ -62,27 +60,29 @@ body {
 }
 
 .btn-icon {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     color: white;
     font-size: 1.5rem;
     width: 40px;
     height: 40px;
     border-radius: 50%;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .btn-icon:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: scale(1.1);
 }
 
 .btn-icon-sm {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     font-size: 1.1rem;
 }
 
@@ -101,20 +101,21 @@ body {
 
 /* API Key Badge */
 .api-key-badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.5;
 }
 
 .badge-active {
-    background: rgba(40, 167, 69, 0.3);
-    color: #a3ffbd;
+    background: none;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .badge-fallback {
-    background: rgba(255, 193, 7, 0.3);
-    color: #ffe59e;
+    background: none;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 /* Settings Panel */
@@ -435,6 +436,7 @@ body {
     align-items: center;
     gap: 10px;
     margin-right: 20px;
+    position: relative;
 }
 
 .form-group.inline input,
@@ -443,15 +445,36 @@ body {
     min-width: 100px;
 }
 
+/* Quality Label */
+.quality-label {
+    font-weight: 600;
+    color: #555;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: -10px;
+}
+
+/* Quality Select in analyze row */
+.analyze-row select {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    transition: border-color 0.3s;
+}
+
+.analyze-row select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
 .options {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
 }
 
 .checkbox-label {
@@ -611,10 +634,27 @@ body {
 .btn-success {
     background: #28a745;
     color: white;
+    display: none;
+}
+
+.btn-success.pop-in {
+    display: inline-block;
+    animation: pop-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes pop-in {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .btn-success:hover {
     background: #218838;
+}
+
+.btn-success:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.4), 0 0 12px rgba(40, 167, 69, 0.3);
 }
 
 .btn-success:disabled {
@@ -629,13 +669,13 @@ body {
 
 /* Results Section */
 .results-section {
-    margin-top: 30px;
-    padding-top: 30px;
+    margin-top: 20px;
+    padding-top: 20px;
     border-top: 2px solid #e0e0e0;
 }
 
 .results-section h2 {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     color: #333;
 }
 
@@ -643,22 +683,22 @@ body {
 .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
 .stat-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
+    padding: 14px;
     border-radius: 12px;
     text-align: center;
     color: white;
 }
 
 .stat-value {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .stat-label {
@@ -669,7 +709,6 @@ body {
 /* Video List */
 .video-list-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
     gap: 12px;
@@ -732,6 +771,11 @@ body {
     background: #c82333;
 }
 
+.btn-stop:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.4), 0 0 10px rgba(220, 53, 69, 0.3);
+}
+
 .btn-stop:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -766,7 +810,7 @@ body {
 }
 
 .video-list {
-    max-height: 380px;
+    max-height: 390px;
     overflow-y: auto;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
@@ -802,6 +846,8 @@ body {
     align-items: center;
     justify-content: center;
 }
+.video-number.digits-2 { width: 32px; }
+.video-number.digits-3 { width: 38px; }
 
 .video-info {
     flex: 1;
@@ -854,18 +900,21 @@ body {
 }
 
 .btn-open-dl-folder {
-    background: none;
-    border: none;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
     color: #999;
     font-size: 0.78rem;
+    font-weight: 600;
     cursor: pointer;
-    padding: 4px 0;
-    transition: color 0.2s;
+    padding: 5px 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
 }
 
 .btn-open-dl-folder:hover {
     color: #667eea;
-    text-decoration: underline;
+    border-color: #667eea;
+    background: #f0f2ff;
 }
 
 /* Download Complete Modal */
@@ -873,7 +922,7 @@ body {
     background: white;
     border-radius: 16px;
     padding: 30px;
-    max-width: 420px;
+    max-width: 630px;
     width: 90%;
     text-align: center;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -934,8 +983,8 @@ body {
 .footer {
     text-align: center;
     color: white;
-    margin-top: 30px;
-    padding: 20px;
+    margin-top: 14px;
+    padding: 10px;
     opacity: 0.8;
 }
 
@@ -982,7 +1031,7 @@ body {
         gap: 15px;
     }
 
-    .btn-success {
+    .btn-success.pop-in {
         width: 100%;
     }
 }

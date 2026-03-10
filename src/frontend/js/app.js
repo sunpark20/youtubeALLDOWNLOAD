@@ -115,21 +115,32 @@ async function init() {
     // Setup event listeners
     elements.analyzeBtn.addEventListener('click', analyzeUrl);
 
-    // 키보드 흐름: URL 입력 → Enter → 화질 선택 → Enter → 분석 시작
+    // Enter 키 → 형식 select로 포커스 이동 & 펼침
     elements.channelUrl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            elements.quality.focus();
+            const q = elements.quality;
+            q.focus();
+            q.size = q.options.length;
         }
     });
-    elements.quality.addEventListener('change', () => {
-        elements.analyzeBtn.focus();
-    });
+
+    // Select 키보드 리스너: Enter → 분석 시작, Escape → 접기
     elements.quality.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
+            elements.quality.size = 0;
             elements.analyzeBtn.click();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            elements.quality.size = 0;
+            elements.channelUrl.focus();
         }
+    });
+
+    // Select blur → 접기 (포커스 잃을 때만)
+    elements.quality.addEventListener('blur', () => {
+        elements.quality.size = 0;
     });
     elements.downloadAllBtn.addEventListener('click', downloadAll);
     elements.stopDownloadBtn.addEventListener('click', () => {
@@ -231,6 +242,8 @@ async function analyzeUrl() {
     loaderEl.style.display = 'inline-block';
     loaderEl.textContent = '분석 중...';
     elements.resultsSection.style.display = 'none';
+    elements.downloadAllBtn.classList.remove('pop-in');
+    elements.downloadAllBtn.style.display = 'none';
 
     // Show loading toast with rotating messages
     const toast = document.getElementById('loadingToast');
@@ -322,7 +335,11 @@ function displayResults(data) {
     // Show results section
     elements.resultsSection.style.display = 'block';
 
-    // Scroll to results and focus download button
+    // Show download button with pop-in animation and focus
+    elements.downloadAllBtn.classList.remove('pop-in');
+    elements.downloadAllBtn.style.display = '';  // clear inline style so CSS class takes effect
+    void elements.downloadAllBtn.offsetWidth; // force reflow to restart animation
+    elements.downloadAllBtn.classList.add('pop-in');
     elements.resultsSection.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => elements.downloadAllBtn.focus(), 400);
 }
@@ -338,12 +355,14 @@ function renderVideoList(videos) {
         return;
     }
 
+    const digitClass = videos.length >= 100 ? 'digits-3' : videos.length >= 10 ? 'digits-2' : '';
+
     videos.forEach((video, index) => {
         const videoItem = document.createElement('div');
         videoItem.className = 'video-item';
         videoItem.id = `video-row-${index}`;
         videoItem.innerHTML = `
-            <div class="video-number">${index + 1}</div>
+            <div class="video-number ${digitClass}">${index + 1}</div>
             <div class="video-info">
                 <div class="video-title">${escapeHtml(video.title)}</div>
             </div>
@@ -369,12 +388,15 @@ async function downloadAll() {
     elements.downloadAllBtn.disabled = true;
     elements.analyzeBtn.disabled = true;
 
-    // Show mini progress bar + stop button
+    // Show mini progress bar + stop button (right next to download button)
     elements.progressWrap.style.display = 'flex';
     elements.stopDownloadBtn.disabled = false;
     elements.stopDownloadBtn.style.opacity = '1';
     elements.progressFill.style.width = '0%';
     elements.progressText.textContent = `0/${currentVideos.length}`;
+
+    // Focus stop button so Enter key can stop download
+    setTimeout(() => elements.stopDownloadBtn.focus(), 100);
 
     const quality = elements.quality.value;
     let completed = 0;
@@ -449,8 +471,9 @@ async function downloadAll() {
     elements.completeTitle.textContent = stopped ? '다운로드 중지됨' : '다운로드 완료';
     elements.completeSummary.textContent = parts.join(' · ');
     elements.completePath.textContent = displayPath;
-    elements.openFolderBtn.onclick = () => openDownloadFolder(folderPath);
+    elements.openFolderBtn.onclick = () => { openDownloadFolder(folderPath); elements.completeModal.style.display = 'none'; };
     elements.completeModal.style.display = 'flex';
+    setTimeout(() => elements.openFolderBtn.focus(), 100);
 
     isDownloading = false;
     stopRequested = false;

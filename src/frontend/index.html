@@ -14,10 +14,10 @@
         <header class="header">
             <h1>YOUTUBE BULK DOWNLOADER</h1>
             <div id="status" class="status">
-                <span id="ytdlpVersion" class="version"></span>
                 <button id="settingsBtn" class="btn-icon btn-icon-sm" title="API 키 설정">⚙</button>
                 <span id="apiKeyStatus" class="api-key-badge"></span>
             </div>
+            <span id="ytdlpVersion" class="version"></span>
         </header>
 
         <!-- Settings Panel -->
@@ -56,21 +56,16 @@
                     <input type="text" id="channelUrl" placeholder="@채널명 또는 재생목록 URL을 입력하세요" autocomplete="off">
                 </div>
 
-                <div class="options">
-                    <div class="form-group inline">
-                        <label for="quality">화질:</label>
-                        <select id="quality">
-                            <option value="360p">360p</option>
-                            <option value="720p" selected>720p</option>
-                            <option value="1080p">1080p</option>
-                            <option value="audio">음원만 (MP3)</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="analyze-row">
+                    <label for="quality" class="quality-label">형식</label>
+                    <select id="quality">
+                        <option value="360p">360p</option>
+                        <option value="720p" selected>720p</option>
+                        <option value="1080p">1080p</option>
+                        <option value="audio">MP3</option>
+                    </select>
                     <button id="analyzeBtn" class="btn btn-primary">
-                        <span class="btn-text">채널에서 목록 가져오기</span>
+                        <span class="btn-text">목록 가져오기</span>
                         <span class="btn-loader" style="display: none;">분석 중...</span>
                     </button>
                     <label class="shorts-toggle">
@@ -137,6 +132,9 @@
 
                 <div class="video-list-header">
                     <h3>다운로드할 영상 목록 (<span id="videoCount">0</span>개)</h3>
+                    <button id="downloadAllBtn" class="btn btn-success">
+                        <span class="btn-text">다운로드 시작</span>
+                    </button>
                     <div id="progressWrap" class="progress-wrap" style="display: none;">
                         <div class="progress-bar">
                             <div id="progressFill" class="progress-fill" style="width: 0%"></div>
@@ -145,9 +143,6 @@
                         <button id="stopDownloadBtn" class="btn-stop" title="다운로드 중지">중단</button>
                         <span id="stopWaitMsg" class="stop-wait-msg" style="display: none;">현재 진행중인 다운로드 완료중<span class="stop-wait-dots"></span></span>
                     </div>
-                    <button id="downloadAllBtn" class="btn btn-success">
-                        <span class="btn-text">다운로드 시작</span>
-                    </button>
                 </div>
 
                 <div id="videoList" class="video-list"></div>
@@ -172,7 +167,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Made with ❤️ · Desktop App v1.0.0</p>
+            <p>Made in Korea 🇰🇷 대한민국 만세 🇰🇷 독도는 우리 땅</p>
         </footer>
     </div>
 
