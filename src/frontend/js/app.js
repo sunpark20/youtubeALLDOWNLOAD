@@ -122,6 +122,7 @@ async function init() {
             const q = elements.quality;
             q.focus();
             q.size = q.options.length;
+            q.classList.add('expanded');
         }
     });
 
@@ -130,10 +131,12 @@ async function init() {
         if (e.key === 'Enter') {
             e.preventDefault();
             elements.quality.size = 0;
+            elements.quality.classList.remove('expanded');
             elements.analyzeBtn.click();
         } else if (e.key === 'Escape') {
             e.preventDefault();
             elements.quality.size = 0;
+            elements.quality.classList.remove('expanded');
             elements.channelUrl.focus();
         }
     });
@@ -141,6 +144,7 @@ async function init() {
     // Select blur → 접기 (포커스 잃을 때만)
     elements.quality.addEventListener('blur', () => {
         elements.quality.size = 0;
+        elements.quality.classList.remove('expanded');
     });
     elements.downloadAllBtn.addEventListener('click', downloadAll);
     elements.stopDownloadBtn.addEventListener('click', () => {
@@ -168,6 +172,14 @@ async function init() {
     elements.completeCloseBtn.addEventListener('click', () => elements.completeModal.style.display = 'none');
     elements.completeModal.addEventListener('click', (e) => {
         if (e.target === elements.completeModal) elements.completeModal.style.display = 'none';
+    });
+    elements.completeModal.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const btns = [elements.openFolderBtn, elements.completeCloseBtn];
+            const idx = btns.indexOf(document.activeElement);
+            btns[(idx + 1) % 2].focus();
+        }
     });
 
     // 시작 시 URL 입력창에 포커스

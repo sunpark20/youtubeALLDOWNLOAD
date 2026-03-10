@@ -75,7 +75,7 @@ body {
 }
 .btn-pill:hover { background: rgba(0, 122, 255, 0.2); }
 .btn-pill:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-pill:focus-visible {
+.btn-pill:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
 }
@@ -457,6 +457,10 @@ body {
     border-color: #FFC107;
 }
 
+.analyze-row select.expanded {
+    border-radius: 12px;
+}
+
 .options {
     display: flex;
     align-items: center;
@@ -613,7 +617,7 @@ body {
     box-shadow: 0 5px 20px rgba(0, 122, 255, 0.3);
 }
 
-.btn-primary:focus-visible {
+.btn-primary:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.4), 0 5px 20px rgba(0, 122, 255, 0.3);
     transform: translateY(-2px);
@@ -737,7 +741,7 @@ body {
     background: #E6352B;
 }
 
-.btn-stop:focus-visible {
+.btn-stop:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.4), 0 0 10px rgba(255, 59, 48, 0.3);
 }
@@ -927,6 +931,16 @@ body {
 
 .btn-close-modal:hover {
     background: #C6C6C8;
+}
+
+.btn-open-folder:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.4), 0 5px 20px rgba(0, 122, 255, 0.3);
+}
+
+.btn-close-modal:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 }
 
 /* Footer */
