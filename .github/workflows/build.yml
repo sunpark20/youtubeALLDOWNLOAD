@@ -11,10 +11,10 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: macos-12      # Intel (x86_64) - macos-13 대신 12로 시도
+            arch: x86_64
           - os: macos-latest  # Silicon (arm64)
             arch: arm64
-          - os: macos-13      # Intel (x86_64) - 13으로 다시 시도하되 설정을 명확히
-            arch: x86_64
     runs-on: ${{ matrix.os }}
     name: Build macOS (${{ matrix.arch }})
     steps:
@@ -48,6 +48,10 @@ jobs:
 
           # Base64 디코딩 및 파일 저장
           cert_data = os.environ['CERTIFICATE_P12_BASE64']
+          if not cert_data:
+              print("ERROR: MACOS_CERTIFICATE is empty!")
+              exit(1)
+          
           with open('certificate.p12', 'wb') as f:
               f.write(base64.b64decode(cert_data))
           
@@ -81,6 +85,7 @@ jobs:
 
       - name: Create DMG
         run: |
+          # 파일명을 명확히 지정하여 생성
           hdiutil create -volname "YouTubeDownloader" -srcfolder dist/YouTubeDownloader.app -ov -format UDZO dist/YouTubeDownloader-${{ matrix.arch }}.dmg
 
       - name: Upload Artifact
@@ -110,7 +115,6 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          # 파일명을 명시적으로 지정하여 실행
           pyinstaller --clean --noconfirm YouTubeDownloader.spec
 
       - name: Download FFmpeg for Windows
