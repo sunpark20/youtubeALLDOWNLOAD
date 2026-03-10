@@ -592,6 +592,19 @@ async def analyze_playlist(request: PlaylistAnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/download/progress")
+async def get_download_progress():
+    """Get current download progress"""
+    return downloader._progress or {}
+
+
+@router.post("/download/cancel")
+async def cancel_download():
+    """현재 진행 중인 다운로드를 즉시 취소"""
+    downloader.request_cancel()
+    return {"success": True, "message": "다운로드 중단 요청됨"}
+
+
 @router.post("/download/start")
 async def start_download(request: DownloadExtractRequest):
     """
@@ -617,7 +630,9 @@ async def start_download(request: DownloadExtractRequest):
             downloader.download_video, request.video_id, request.quality, output_dir
         )
 
-        if filepath == "MEMBERSHIP_SKIP":
+        if filepath == "CANCELLED":
+            return {"success": False, "cancelled": True, "message": "사용자가 다운로드를 중단했습니다."}
+        elif filepath == "MEMBERSHIP_SKIP":
             # 멤버십 전용 영상 → 아카이브에 기록하여 다음에 스킵
             archive.add_video(request.video_id)
             return {"success": True, "skipped": True, "message": "멤버십 전용 (스킵)"}

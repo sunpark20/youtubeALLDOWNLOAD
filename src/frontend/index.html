@@ -79,7 +79,7 @@
                 <h1>YOUTUBE BULK DOWNLOADER</h1>
             </div>
             <div id="status" class="status">
-                <button id="settingsBtn" class="btn-pill">설정</button>
+                <button id="settingsBtn" class="btn-pill btn-pill-muted">설정</button>
                 <span id="apiKeyStatus" class="api-key-badge"></span>
             </div>
             <span id="ytdlpVersion" class="version"></span>
@@ -116,7 +116,7 @@
                 <div class="form-group">
                     <div class="label-row">
                         <label for="channelUrl">@채널명 또는 재생목록 주소를 입력</label>
-                        <button id="helpBtn" class="btn-pill">도움말</button>
+                        <button id="helpBtn" class="btn-pill btn-pill-muted">도움말</button>
                     </div>
                     <input type="text" id="channelUrl" placeholder="@채널명 또는 재생목록 URL을 입력하세요" autocomplete="off">
                 </div>
@@ -130,7 +130,7 @@
                         <option value="360p">360p</option>
                         <option value="audio">MP3</option>
                     </select>
-                    <button id="analyzeBtn" class="btn btn-primary">
+                    <button id="analyzeBtn" class="btn-pill">
                         <span class="btn-text">목록 가져오기</span>
                         <span class="btn-loader" style="display: none;">분석 중...</span>
                     </button>
@@ -189,7 +189,7 @@
 
                 <div class="video-list-header">
                     <h3>다운로드할 영상 목록 (<span id="videoCount">0</span>개)</h3>
-                    <button id="downloadAllBtn" class="btn-pill" style="display: none;">
+                    <button id="downloadAllBtn" class="btn-pill btn-download" style="display: none;">
                         <span class="btn-text">받기</span>
                     </button>
                     <div id="progressWrap" class="progress-wrap" style="display: none;">
@@ -205,7 +205,7 @@
 
                 <div id="videoList" class="video-list"></div>
                 <div class="video-list-footer">
-                    <button id="openDownloadFolderBtn" class="btn-pill">폴더 열기</button>
+                    <button id="openDownloadFolderBtn" class="btn-pill btn-pill-muted">폴더 열기</button>
                 </div>
             </section>
         </main>

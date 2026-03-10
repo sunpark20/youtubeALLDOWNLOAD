@@ -107,6 +107,30 @@ body {
     animation: pop-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
+/* Download CTA button — same color as btn-pill, larger size */
+.btn-download {
+    padding: 10px 32px;
+    font-size: 1rem;
+}
+
+/* Muted pill for secondary actions (설정, 도움말, 폴더열기) */
+.btn-pill-muted {
+    background: rgba(142, 142, 147, 0.12);
+    color: #6E6E73;
+}
+.btn-pill-muted:hover {
+    background: rgba(142, 142, 147, 0.2);
+}
+.btn-download.pop-in {
+    animation: pop-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+               download-glow 2s ease-in-out 0.4s infinite;
+}
+
+@keyframes download-glow {
+    0%, 100% { box-shadow: 0 0 6px rgba(0, 122, 255, 0.2); }
+    50%      { box-shadow: 0 0 16px rgba(0, 122, 255, 0.5), 0 0 32px rgba(0, 122, 255, 0.15); }
+}
+
 .update-link {
     font-size: 0.7rem;
     color: #8E8E93;
@@ -512,8 +536,8 @@ body {
     gap: 16px;
 }
 
-.analyze-row .btn-primary {
-    flex: 1;
+.analyze-row .shorts-toggle {
+    margin-left: auto;
 }
 
 /* Shorts Toggle */
@@ -567,7 +591,7 @@ body {
 
 .toggle-label {
     font-size: 0.82rem;
-    color: #8E8E93;
+    color: #6E6E73;
     font-weight: 600;
 }
 
@@ -870,7 +894,11 @@ body {
     transition: color 0.3s;
 }
 
-.video-status-downloading { color: #007AFF; }
+.video-status-downloading {
+    color: #007AFF;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
 .video-status-success { color: #34C759; }
 .video-status-error { color: #FF3B30; }
 .video-status-skip { color: #FF9500; }

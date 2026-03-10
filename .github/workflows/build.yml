@@ -8,8 +8,16 @@ on:
 
 jobs:
   build-macos:
-    runs-on: macos-latest  # 최신 실리콘 맥 서버에서 실행
-    name: Build macOS (Universal2)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-13       # Intel (x86_64)
+            arch: x86_64
+          - os: macos-latest   # Silicon (arm64)
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    name: Build macOS (${{ matrix.arch }})
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,10 +61,9 @@ jobs:
           for cmd in commands:
               subprocess.run(cmd, shell=True, check=True)
 
-      - name: Build with PyInstaller (Universal2)
+      - name: Build with PyInstaller
         run: |
-          # --target-arch universal2 옵션을 사용하여 인텔/실리콘 통합 빌드
-          pyinstaller --clean --noconfirm --target-arch universal2 YouTubeDownloader.spec
+          pyinstaller --clean --noconfirm YouTubeDownloader.spec
 
       - name: Code Sign and Notarize
         env:
@@ -72,13 +79,13 @@ jobs:
 
       - name: Create DMG
         run: |
-          hdiutil create -volname "YouTubeDownloader" -srcfolder dist/YouTubeDownloader.app -ov -format UDZO dist/YouTubeDownloader-macOS.dmg
+          hdiutil create -volname "YouTubeDownloader" -srcfolder dist/YouTubeDownloader.app -ov -format UDZO dist/YouTubeDownloader-macOS-${{ matrix.arch }}.dmg
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: YouTubeDownloader-macOS
-          path: dist/YouTubeDownloader-macOS.dmg
+          name: YouTubeDownloader-macOS-${{ matrix.arch }}
+          path: dist/YouTubeDownloader-macOS-${{ matrix.arch }}.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -134,7 +141,8 @@ jobs:
         with:
           generate_release_notes: true  # 변경 사항 로그 자동 생성
           files: |
-            YouTubeDownloader-macOS/YouTubeDownloader-macOS.dmg
+            YouTubeDownloader-macOS-x86_64/YouTubeDownloader-macOS-x86_64.dmg
+            YouTubeDownloader-macOS-arm64/YouTubeDownloader-macOS-arm64.dmg
             YouTubeDownloader-Windows/YouTubeDownloader-Windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

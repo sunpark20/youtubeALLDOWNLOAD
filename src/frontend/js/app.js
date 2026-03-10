@@ -39,6 +39,7 @@ let currentUrlType = '';
 let isAnalyzing = false;
 let isDownloading = false;
 let stopRequested = false;
+let currentDownloadController = null;
 
 // DOM Elements
 const elements = {
@@ -147,12 +148,19 @@ async function init() {
         elements.quality.classList.remove('expanded');
     });
     elements.downloadAllBtn.addEventListener('click', downloadAll);
-    elements.stopDownloadBtn.addEventListener('click', () => {
+    elements.stopDownloadBtn.addEventListener('click', async () => {
         if (isDownloading) {
             stopRequested = true;
             elements.stopDownloadBtn.disabled = true;
             elements.stopDownloadBtn.style.opacity = '0.5';
-            document.getElementById('stopWaitMsg').style.display = 'inline';
+            // 서버에 즉시 취소 요청
+            try {
+                await fetch(`${API_BASE}/download/cancel`, { method: 'POST' });
+            } catch (_) {}
+            // 진행 중인 fetch 요청도 abort
+            if (currentDownloadController) {
+                currentDownloadController.abort();
+            }
         }
     });
     elements.settingsBtn.addEventListener('click', toggleSettings);
@@ -440,16 +448,27 @@ async function downloadAll() {
         }
 
         const video = currentVideos[i];
-        const progress = Math.round(((i + 1) / currentVideos.length) * 100);
 
-        // Update mini progress
-        elements.progressFill.style.width = `${progress}%`;
-        elements.progressText.textContent = `${i + 1}/${currentVideos.length}`;
+        // Update mini progress (i = 완료된 수, 다운로드 시작 전)
+        elements.progressFill.style.width = `${Math.round((i / currentVideos.length) * 100)}%`;
+        elements.progressText.textContent = `${i}/${currentVideos.length}`;
 
         // Mark current row as downloading
         updateVideoRow(i, 'downloading', '다운로드 중');
 
+        // Start polling for individual download progress
+        const pollId = setInterval(async () => {
+            try {
+                const prog = await fetch(`${API_BASE}/download/progress`).then(r => r.json());
+                if (prog.status === 'downloading') {
+                    const parts = [prog.percent, prog.total, prog.speed, prog.eta ? `ETA ${prog.eta}` : ''].filter(Boolean);
+                    updateVideoRow(i, 'downloading', parts.join(' \u00b7 '));
+                }
+            } catch (_) {}
+        }, 1000);
+
         try {
+            currentDownloadController = new AbortController();
             const response = await fetchWithTimeout(`${API_BASE}/download/start`, {
                 method: 'POST',
                 headers: {
@@ -461,26 +480,55 @@ async function downloadAll() {
                     channel_name: currentChannelName || null,
                     playlist_name: video.playlist_name || currentPlaylistName || null,
                 }),
+                signal: currentDownloadController.signal,
             }, 600000);  // 10분 타임아웃
 
+            clearInterval(pollId);
             const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.cancelled) {
+                // 서버에서 취소 확인
+                clearInterval(pollId);
+                updateVideoRow(i, 'stopped', '중단됨');
+                stopped = true;
+                for (let j = i + 1; j < currentVideos.length; j++) {
+                    updateVideoRow(j, 'stopped', '중지됨');
+                }
+                break;
+            } else if (response.ok && data.success) {
                 if (data.skipped) {
                     skipped++;
                     updateVideoRow(i, 'skip', '스킵');
                 } else {
                     completed++;
-                    updateVideoRow(i, 'success', '완료');
+                    // 완료 시 파일 크기 표시
+                    const prog = await fetch(`${API_BASE}/download/progress`).then(r => r.json()).catch(() => ({}));
+                    updateVideoRow(i, 'success', prog.total ? `완료 \u00b7 ${prog.total}` : '완료');
                 }
+                // 완료 후 프로그레스바 업데이트
+                elements.progressFill.style.width = `${Math.round(((i + 1) / currentVideos.length) * 100)}%`;
+                elements.progressText.textContent = `${i + 1}/${currentVideos.length}`;
             } else {
                 throw new Error(data.detail || '다운로드 실패');
             }
 
         } catch (error) {
+            clearInterval(pollId);
+            // AbortError 또는 stopRequested → 즉시 중단 처리
+            if (error.name === 'AbortError' || stopRequested) {
+                updateVideoRow(i, 'stopped', '중단됨');
+                stopped = true;
+                for (let j = i + 1; j < currentVideos.length; j++) {
+                    updateVideoRow(j, 'stopped', '중지됨');
+                }
+                break;
+            }
             console.error(`Error downloading ${video.title}:`, error);
             failed++;
             updateVideoRow(i, 'error', '실패');
+            // 실패해도 프로그레스바 업데이트
+            elements.progressFill.style.width = `${Math.round(((i + 1) / currentVideos.length) * 100)}%`;
+            elements.progressText.textContent = `${i + 1}/${currentVideos.length}`;
         }
     }
 
@@ -502,10 +550,10 @@ async function downloadAll() {
 
     isDownloading = false;
     stopRequested = false;
+    currentDownloadController = null;
     elements.downloadAllBtn.disabled = false;
     elements.analyzeBtn.disabled = false;
     elements.progressWrap.style.display = 'none';
-    document.getElementById('stopWaitMsg').style.display = 'none';
 }
 
 /**
@@ -702,6 +750,11 @@ function escapeHtml(text) {
 function fetchWithTimeout(url, options = {}, timeoutMs = 600000) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    // 외부에서 전달된 signal이 있으면 내부 controller와 연동
+    if (options.signal) {
+        options.signal.addEventListener('abort', () => controller.abort());
+    }
 
     return fetch(url, {
         ...options,

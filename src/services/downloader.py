@@ -4,9 +4,12 @@ YouTube Downloader Service
 Wrapper around yt-dlp for extracting download information
 """
 
+import glob
 import logging
 import os
+import re
 import sys
+import threading
 import yt_dlp
 from typing import Dict, List, Optional
 
@@ -55,6 +58,39 @@ class YouTubeDownloader:
         }
         if ffmpeg_loc:
             self.ydl_opts_base['ffmpeg_location'] = ffmpeg_loc
+        self._progress = {}  # 현재 진행률 데이터
+        self._cancel_event = threading.Event()
+
+    def request_cancel(self):
+        """외부에서 다운로드 취소를 요청"""
+        self._cancel_event.set()
+
+    def reset_cancel(self):
+        """취소 플래그 초기화"""
+        self._cancel_event.clear()
+
+    @staticmethod
+    def _strip_ansi(s: str) -> str:
+        """Remove ANSI escape sequences from string"""
+        return re.sub(r'\x1b\[[0-9;]*m', '', s)
+
+    def _progress_hook(self, d):
+        """yt-dlp progress callback"""
+        if self._cancel_event.is_set():
+            raise yt_dlp.utils.DownloadError("사용자가 다운로드를 중단했습니다.")
+        if d['status'] == 'downloading':
+            self._progress = {
+                'status': 'downloading',
+                'percent': self._strip_ansi(d.get('_percent_str', '')).strip(),
+                'total': self._strip_ansi(d.get('_total_bytes_str') or d.get('_total_bytes_estimate_str', '')).strip(),
+                'speed': self._strip_ansi(d.get('_speed_str', '')).strip(),
+                'eta': self._strip_ansi(d.get('_eta_str', '')).strip(),
+            }
+        elif d['status'] == 'finished':
+            self._progress = {
+                'status': 'finished',
+                'total': self._strip_ansi(d.get('_total_bytes_str', '')).strip(),
+            }
 
     def get_video_info(self, video_id: str) -> Optional[Dict]:
         """
@@ -305,14 +341,18 @@ class YouTubeDownloader:
             Downloaded file path or None
         """
         url = f"https://www.youtube.com/watch?v={video_id}"
+        self.reset_cancel()
 
         if not output_dir:
             output_dir = str(Config.DOWNLOADS_DIR)
 
         os.makedirs(output_dir, exist_ok=True)
 
-        # 파일명: YYMMDD_영상제목 [video_id].확장자 (영상 업로드 날짜)
-        outtmpl = os.path.join(output_dir, '%(upload_date>%y%m%d)s_%(title)s [%(id)s].%(ext)s')
+        # 이전 강제 종료로 남은 임시 파일 정리
+        self._cleanup_partial_files(output_dir, video_id)
+
+        # 파일명: YYMMDD_영상제목.확장자 (영상 업로드 날짜)
+        outtmpl = os.path.join(output_dir, '%(upload_date>%y%m%d)s_%(title)s.%(ext)s')
 
         if quality == 'audio':
             format_string = 'bestaudio/best'
@@ -320,6 +360,7 @@ class YouTubeDownloader:
                 **self.ydl_opts_base,
                 'format': format_string,
                 'outtmpl': outtmpl,
+                'progress_hooks': [self._progress_hook],
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -337,6 +378,7 @@ class YouTubeDownloader:
                 **self.ydl_opts_base,
                 'format': format_string,
                 'outtmpl': outtmpl,
+                'progress_hooks': [self._progress_hook],
                 'merge_output_format': 'mp4',
             }
 
@@ -364,6 +406,12 @@ class YouTubeDownloader:
                     return None
 
         except Exception as e:
+            # 취소 요청에 의한 중단
+            if self._cancel_event.is_set():
+                logger.info(f"Download cancelled by user: {video_id}")
+                self._cleanup_partial_files(output_dir, video_id)
+                return "CANCELLED"
+
             error_msg = str(e).lower()
             membership_keywords = [
                 'join this channel', 'members-only', 'members only',
@@ -375,6 +423,17 @@ class YouTubeDownloader:
                 return "MEMBERSHIP_SKIP"
             logger.error(f"Error downloading {video_id}: {e}")
             return None
+
+    @staticmethod
+    def _cleanup_partial_files(output_dir: str, video_id: str):
+        """취소 시 남은 .part / .ytdl 임시 파일 삭제"""
+        for pattern in ('*.part', '*.ytdl', '*.part-Frag*'):
+            for f in glob.glob(os.path.join(output_dir, pattern)):
+                try:
+                    os.remove(f)
+                    logger.info(f"Removed partial file: {f}")
+                except OSError:
+                    pass
 
     def get_download_info(self, video_id: str) -> Optional[Dict]:
         """

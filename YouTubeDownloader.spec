@@ -9,13 +9,17 @@ is_macos = sys.platform == 'darwin'
 
 # 바이너리(ffmpeg) 설정
 if is_macos:
-    ffmpeg_path = '/opt/homebrew/bin/ffmpeg'
-    ffprobe_path = '/opt/homebrew/bin/ffprobe'
-    # 만약 Homebrew 경로에 없으면 현재 디렉토리에서 찾기 (CI 환경 대비)
-    if not os.path.exists(ffmpeg_path):
-        ffmpeg_path = 'ffmpeg'
-        ffprobe_path = 'ffprobe'
-    
+    import shutil
+    if os.path.exists('/opt/homebrew/bin/ffmpeg'):       # ARM
+        ffmpeg_path = '/opt/homebrew/bin/ffmpeg'
+        ffprobe_path = '/opt/homebrew/bin/ffprobe'
+    elif os.path.exists('/usr/local/bin/ffmpeg'):        # Intel
+        ffmpeg_path = '/usr/local/bin/ffmpeg'
+        ffprobe_path = '/usr/local/bin/ffprobe'
+    else:
+        ffmpeg_path = shutil.which('ffmpeg') or 'ffmpeg'
+        ffprobe_path = shutil.which('ffprobe') or 'ffprobe'
+
     icon_file = 'resource/icon.icns'
     target_arch = 'arm64' if platform.machine() == 'arm64' else 'x86_64'
     binaries = [(ffmpeg_path, '.'), (ffprobe_path, '.')]
@@ -90,12 +94,12 @@ if is_macos:
         name='YouTubeDownloader.app',
         icon=icon_file,
         bundle_identifier='com.sunpark.YouTubeDownloader',
-        version='1.1.7',
+        version='1.1.8',
         info_plist={
             'CFBundleDisplayName': 'YouTube BULK DOWNLOADER',
             'CFBundleName': 'YouTubeDownloader',
-            'CFBundleShortVersionString': '1.1.7',
-            'CFBundleVersion': '1.1.7',
+            'CFBundleShortVersionString': '1.1.8',
+            'CFBundleVersion': '1.1.8',
             'NSHighResolutionCapable': True,
             'LSMinimumSystemVersion': '10.15',
             'NSAppTransportSecurity': {

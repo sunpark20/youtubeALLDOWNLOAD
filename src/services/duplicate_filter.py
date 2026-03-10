@@ -123,13 +123,14 @@ class DuplicateFilter:
             logger.error(f"Error scanning directory: {e}")
             return file_hashes
 
-    def is_file_downloaded(self, video_id: str, directory: str) -> bool:
+    def is_file_downloaded(self, video_id: str, directory: str, title: str = None) -> bool:
         """
         Check if video is already downloaded (by archive + actual file existence)
 
         Args:
             video_id: YouTube video ID
             directory: Download directory
+            title: Video title for matching new-format files (without [video_id])
 
         Returns:
             True if file actually exists
@@ -140,13 +141,23 @@ class DuplicateFilter:
         from services.download_archive import get_archive
         archive = get_archive(directory)
 
-        # Scan filenames for [video_id] pattern (ground truth)
+        # Scan filenames — skip incomplete downloads (.part/.temp)
         file_exists = False
         try:
             for filename in os.listdir(directory):
+                if filename.endswith('.part') or filename.endswith('.temp'):
+                    continue
+                # Check 1: [video_id] pattern (기존 파일 하위호환)
                 if f'[{video_id}]' in filename:
                     file_exists = True
                     break
+            # Check 2: title matching (새 파일, [video_id] 없는 형식)
+            if not file_exists and title:
+                normalized_title = self._normalize_title(title)
+                if normalized_title:
+                    existing_titles = self._get_existing_titles(directory)
+                    if normalized_title in existing_titles:
+                        file_exists = True
         except Exception as e:
             logger.error(f"Error checking local files: {e}")
 
@@ -257,21 +268,22 @@ class DuplicateFilter:
             if not video_id:
                 continue
 
-            # Check 1 & 2: archive + filename ID check
-            if self.is_file_downloaded(video_id, download_directory):
+            video_title = video.get('title', '')
+
+            # Check 1 & 2: archive + filename ID/title check
+            if self.is_file_downloaded(video_id, download_directory, title=video_title):
                 skipped += 1
-                logger.info(f"Skipping already downloaded (ID match): {video.get('title', video_id)}")
+                logger.info(f"Skipping already downloaded (ID/title match): {video_title or video_id}")
                 continue
 
-            # Check 3: Legacy title match
-            video_title = video.get('title', '')
+            # Check 3: Legacy title match (타이틀만으로 추가 확인)
             if video_title and self._normalize_title(video_title) in existing_titles:
                 skipped += 1
                 # Also add to archive so future checks are faster
                 from services.download_archive import get_archive
                 archive = get_archive(download_directory)
                 archive.add_video(video_id)
-                logger.info(f"Skipping already downloaded (title match): {video_title}")
+                logger.info(f"Skipping already downloaded (legacy title match): {video_title}")
                 continue
 
             new_videos.append(video)
