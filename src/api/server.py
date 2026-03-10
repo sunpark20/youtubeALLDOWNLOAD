@@ -42,6 +42,11 @@ if Config.FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(Config.FRONTEND_DIR)), name="static")
     logger.info(f"Static files mounted from: {Config.FRONTEND_DIR}")
 
+# Mount resource files (sounds, etc.)
+resource_dir = Config.BASE_DIR / "resource"
+if resource_dir.exists():
+    app.mount("/resource", StaticFiles(directory=str(resource_dir)), name="resource")
+
 
 @app.on_event("startup")
 async def startup_event():

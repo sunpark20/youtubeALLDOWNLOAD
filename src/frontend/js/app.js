@@ -182,6 +182,18 @@ async function init() {
         }
     });
 
+    // App icon click animation
+    const appIcon = document.getElementById('appIcon');
+    appIcon.addEventListener('click', () => {
+        appIcon.classList.add('animating');
+        const boilAudio = new Audio('/resource/BoilingPod.mp3');
+        boilAudio.play().catch(() => {});
+        setTimeout(() => {
+            appIcon.classList.remove('animating');
+            boilAudio.pause();
+        }, 4000);
+    });
+
     // 시작 시 URL 입력창에 포커스
     elements.channelUrl.focus();
 
@@ -485,6 +497,7 @@ async function downloadAll() {
     elements.completePath.textContent = displayPath;
     elements.openFolderBtn.onclick = () => { openDownloadFolder(folderPath); elements.completeModal.style.display = 'none'; };
     elements.completeModal.style.display = 'flex';
+    new Audio('/resource/PeonJobDone.wav').play().catch(() => {});
     setTimeout(() => elements.openFolderBtn.focus(), 100);
 
     isDownloading = false;

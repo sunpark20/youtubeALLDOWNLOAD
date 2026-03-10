@@ -52,6 +52,29 @@ body {
     display: none;
 }
 
+/* Header Title (icon + h1) */
+.header-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.app-icon {
+    width: 64px;
+    height: 64px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.app-icon svg * {
+    animation-play-state: paused !important;
+}
+
+.app-icon.animating svg * {
+    animation-play-state: running !important;
+}
+
 /* Header Top */
 .header-top {
     display: flex;
@@ -690,7 +713,6 @@ body {
     align-items: center;
     gap: 10px;
     flex: 1;
-    max-width: 320px;
 }
 
 .progress-bar {
