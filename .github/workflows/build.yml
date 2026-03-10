@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-13
+          - os: macos-13    # Intel Mac (x86_64)
             arch: x86_64
-          - os: macos-latest
+          - os: macos-latest # Apple Silicon (arm64)
             arch: arm64
     runs-on: ${{ matrix.os }}
     name: Build macOS (${{ matrix.arch }})
@@ -36,12 +36,14 @@ jobs:
       - name: Install FFmpeg
         run: brew install ffmpeg
 
-      - name: Import macOS Certificates
+      - name: Import macOS Certificates (Safe Mode)
         env:
-          CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE }}
+          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
         run: |
-          echo $CERTIFICATE_P12 | base64 --decode > certificate.p12
+          # Python을 사용하여 공백 문제 없이 Base64를 파일로 복원
+          python3 -c "import base64, os; data = os.environ['CERTIFICATE_P12_BASE64']; with open('certificate.p12', 'wb') as f: f.write(base64.b64decode(data))"
+          
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
@@ -50,7 +52,8 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          # .spec 파일에서 아키텍처를 강제 지정 (환경에 맞게)
+          # 파일이 있는지 확인 (디버깅용)
+          ls -R
           pyinstaller YouTubeDownloader.spec --clean --noconfirm
 
       - name: Code Sign and Notarize
@@ -96,13 +99,15 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller YouTubeDownloader.spec --clean --noconfirm
+          # 윈도우에서 파일 확인 (디버깅용)
+          dir
+          # 파일명을 명시적으로 지정하여 실행
+          pyinstaller --clean --noconfirm YouTubeDownloader.spec
 
       - name: Download FFmpeg for Windows
         run: |
           curl -L https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -o ffmpeg.zip
           Expand-Archive ffmpeg.zip -DestinationPath .
-          # 빌드 결과 폴더에 ffmpeg 복사
           if (!(Test-Path "dist/YouTubeDownloader")) { New-Item -ItemType Directory -Force -Path "dist/YouTubeDownloader" }
           Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe dist/YouTubeDownloader/ffmpeg.exe -Force
           Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe dist/YouTubeDownloader/ffprobe.exe -Force
