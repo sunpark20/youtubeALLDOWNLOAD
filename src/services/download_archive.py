@@ -7,6 +7,7 @@ have been downloaded. Uses the same format as yt-dlp's --download-archive.
 
 import os
 import re
+import sys
 import logging
 from typing import Set
 
@@ -68,6 +69,10 @@ class DownloadArchive:
             with open(self.archive_path, 'a', encoding='utf-8') as f:
                 f.write(f"youtube {video_id}\n")
             self._cached_ids.add(video_id)
+            # Windows에서 숨김 파일 속성 설정
+            if sys.platform.startswith('win'):
+                import ctypes
+                ctypes.windll.kernel32.SetFileAttributesW(self.archive_path, 0x02)
             logger.debug(f"Added to archive: {video_id}")
         except Exception as e:
             logger.error(f"Error writing to archive: {e}")

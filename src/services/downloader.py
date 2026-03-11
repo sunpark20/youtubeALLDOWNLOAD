@@ -59,6 +59,7 @@ class YouTubeDownloader:
         if ffmpeg_loc:
             self.ydl_opts_base['ffmpeg_location'] = ffmpeg_loc
         self._progress = {}  # 현재 진행률 데이터
+        self._last_total = ''  # 다운로드 완료 시 파일크기 보관 (MP3 변환 후 사용)
         self._cancel_event = threading.Event()
 
     def request_cancel(self):
@@ -87,9 +88,29 @@ class YouTubeDownloader:
                 'eta': self._strip_ansi(d.get('_eta_str', '')).strip(),
             }
         elif d['status'] == 'finished':
+            total = self._strip_ansi(d.get('_total_bytes_str', '')).strip()
+            self._last_total = total
             self._progress = {
                 'status': 'finished',
-                'total': self._strip_ansi(d.get('_total_bytes_str', '')).strip(),
+                'total': total,
+            }
+
+    def _postprocessor_hook(self, d):
+        """yt-dlp postprocessor callback (FFmpeg 변환 등)"""
+        status = d.get('status', '')
+        if status == 'started':
+            self._progress = {
+                'status': 'converting',
+                'percent': '',
+                'total': '',
+                'speed': '',
+                'eta': '',
+                'postprocessor': d.get('postprocessor', ''),
+            }
+        elif status == 'finished':
+            self._progress = {
+                'status': 'converting_done',
+                'total': self._last_total,
             }
 
     def get_video_info(self, video_id: str) -> Optional[Dict]:
@@ -361,6 +382,7 @@ class YouTubeDownloader:
                 'format': format_string,
                 'outtmpl': outtmpl,
                 'progress_hooks': [self._progress_hook],
+                'postprocessor_hooks': [self._postprocessor_hook],
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',

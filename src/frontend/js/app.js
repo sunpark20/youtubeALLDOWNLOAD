@@ -568,12 +568,16 @@ async function downloadAll() {
         updateVideoRow(i, 'downloading', '다운로드 중');
 
         // Start polling for individual download progress
+        let dotCount = 0;
         const pollId = setInterval(async () => {
             try {
                 const prog = await fetch(`${API_BASE}/download/progress`).then(r => r.json());
                 if (prog.status === 'downloading') {
                     const parts = [prog.percent, prog.total, prog.speed, prog.eta ? `ETA ${prog.eta}` : ''].filter(Boolean);
                     updateVideoRow(i, 'downloading', parts.join(' \u00b7 '));
+                } else if (prog.status === 'converting') {
+                    dotCount = (dotCount % 3) + 1;
+                    updateVideoRow(i, 'downloading', 'MP3 변환 중' + '.'.repeat(dotCount));
                 }
             } catch (_) {}
         }, 1000);
