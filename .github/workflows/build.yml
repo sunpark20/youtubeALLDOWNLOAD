@@ -143,7 +143,7 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## v1.1.9 업데이트
+            ## v1.2.1 업데이트
 
             ### 디자인 변경
             - 영상 목록에 체크박스 아이콘 추가
@@ -159,6 +159,20 @@ jobs:
             ### 선택 다운로드
             - 원하는 영상만 골라서 다운로드 가능 (기존: 전체 다운로드만 가능)
             - 선택 없으면 받기 버튼 비활성화
+
+            ### 버그 수정 및 안정성 개선
+            - 인텔맥 실행 오류 감지를 위한 로그 파일 기능 추가
+            - PyObjC / WebKit 초기화 실패 시 로그에 원인 기록
+            - ffmpeg 번들 누락 시 경고 및 PATH 폴백 처리
+
+            ---
+
+            > **인텔맥에서 앱이 바로 꺼진다면**
+            > 앱 실행 후 종료되면 아래 경로에서 오늘 날짜 로그 파일을 찾아 개발자에게 보내주세요.
+            > ```
+            > ~/Library/Logs/YouTubeDownloader/app_YYYYMMDD.log
+            > ```
+            > Finder → 이동 → 폴더로 이동 (`Cmd+Shift+G`) → 위 경로 입력
           files: |
             YouTubeDownloader-macOS-x86_64/YouTubeDownloader-macOS-x86_64.dmg
             YouTubeDownloader-macOS-arm64/YouTubeDownloader-macOS-arm64.dmg
