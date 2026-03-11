@@ -109,12 +109,12 @@ if is_macos:
         name='YouTubeDownloader.app',
         icon=icon_file,
         bundle_identifier='com.sunpark.YouTubeDownloader',
-        version='1.1.9',
+        version='1.2.1',
         info_plist={
             'CFBundleDisplayName': 'YouTube BULK DOWNLOADER',
             'CFBundleName': 'YouTubeDownloader',
-            'CFBundleShortVersionString': '1.1.9',
-            'CFBundleVersion': '1.1.9',
+            'CFBundleShortVersionString': '1.2.1',
+            'CFBundleVersion': '1.2.1',
             'NSHighResolutionCapable': True,
             'LSMinimumSystemVersion': '10.15',
             'NSAppTransportSecurity': {
