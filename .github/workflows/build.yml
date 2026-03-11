@@ -14,10 +14,10 @@ jobs:
         include:
           - os: macos-15-intel  # Intel (x86_64)
             arch: x86_64
-            label: Intel칩
+            label: Intel
           - os: macos-latest   # Silicon (arm64)
             arch: arm64
-            label: Apple칩
+            label: M-Chip
     runs-on: ${{ matrix.os }}
     name: Build macOS (${{ matrix.arch }})
     steps:
@@ -174,8 +174,8 @@ jobs:
             - 크래시 자동 리포트 시스템 추가 (이메일 알림)
             - Path import 버그 수정
           files: |
-            YB-Mac-Intel칩/YB-Mac-Intel칩.dmg
-            YB-Mac-Apple칩/YB-Mac-Apple칩.dmg
+            YB-Mac-Intel/YB-Mac-Intel.dmg
+            YB-Mac-M-Chip/YB-Mac-M-Chip.dmg
             YB-Windows10_11-64bit/YB-Windows10_11-64bit.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
