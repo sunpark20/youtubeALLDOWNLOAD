@@ -435,8 +435,6 @@ function renderVideoList(videos) {
         return;
     }
 
-    const digitClass = videos.length >= 100 ? 'digits-3' : videos.length >= 10 ? 'digits-2' : '';
-
     videos.forEach((video, index) => {
         selectedVideos.add(index);
         const videoItem = document.createElement('div');
@@ -445,9 +443,9 @@ function renderVideoList(videos) {
         videoItem.id = `video-row-${index}`;
         videoItem.innerHTML = `
             <input type="checkbox" class="video-checkbox" data-index="${index}" checked>
-            <div class="video-number ${digitClass}">${index + 1}</div>
+            <img class="video-thumb" src="https://i.ytimg.com/vi/${video.id}/default.jpg" alt="" loading="lazy">
             <div class="video-info">
-                <div class="video-title">${escapeHtml(video.title)}</div>
+                <div class="video-title">${index + 1}. ${escapeHtml(video.title)}</div>
             </div>
             <div class="video-status" id="video-status-${index}"></div>
         `;
@@ -577,7 +575,7 @@ async function downloadAll() {
                     updateVideoRow(i, 'downloading', parts.join(' \u00b7 '));
                 } else if (prog.status === 'converting') {
                     dotCount = (dotCount % 3) + 1;
-                    updateVideoRow(i, 'downloading', 'MP3 변환 중' + '.'.repeat(dotCount));
+                    updateVideoRow(i, 'downloading', '오디오 변환 중' + '.'.repeat(dotCount));
                 }
             } catch (_) {}
         }, 1000);
@@ -680,14 +678,11 @@ function updateVideoRow(index, type, statusText) {
     const row = document.getElementById(`video-row-${index}`);
     if (!row) return;
 
-    const numberEl = row.querySelector('.video-number');
     const statusEl = document.getElementById(`video-status-${index}`);
-    if (!numberEl || !statusEl) return;
+    if (!statusEl) return;
 
     // Update row state
     row.setAttribute('data-state', type);
-    const digitClass = numberEl.className.match(/digits-\d/) ? numberEl.className.match(/digits-\d/)[0] : '';
-    numberEl.className = `video-number ${digitClass} video-number-${type}`.replace(/\s+/g, ' ').trim();
     statusEl.className = `video-status video-status-${type}`;
     statusEl.textContent = statusText;
 

@@ -16,14 +16,14 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 4px 8px;
 }
 
 /* Header */
 .header {
     text-align: center;
     color: #000;
-    margin-bottom: 30px;
+    margin-bottom: 14px;
 }
 
 .header h1 {
@@ -423,14 +423,14 @@ body {
 .main-content {
     background: white;
     border-radius: 16px;
-    padding: 30px;
+    padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     border: 1px solid #E5E5EA;
 }
 
 /* Input Section */
 .input-section {
-    margin-bottom: 30px;
+    margin-bottom: 6px;
 }
 
 .form-group {
@@ -689,8 +689,8 @@ body {
 
 /* Results Section */
 .results-section {
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid #C6C6C8;
 }
 
@@ -848,7 +848,7 @@ body {
 }
 
 .video-list {
-    max-height: 390px;
+    max-height: 630px;
     overflow-y: auto;
     border: 1px solid #E5E5EA;
     border-radius: 10px;
@@ -857,10 +857,10 @@ body {
 .video-item {
     display: flex;
     align-items: center;
-    padding: 6px 12px;
+    padding: 4px 8px;
     border-bottom: 1px solid #F2F2F7;
     transition: background 0.2s;
-    gap: 10px;
+    gap: 8px;
 }
 
 .video-item:hover {
@@ -876,21 +876,14 @@ body {
     border-bottom: none;
 }
 
-.video-number {
+.video-thumb {
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    background: #007AFF;
-    color: white;
-    font-weight: 700;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 106px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #F2F2F7;
 }
-.video-number.digits-2 { width: 32px; }
-.video-number.digits-3 { width: 38px; }
 
 .video-info {
     flex: 1;
@@ -931,19 +924,12 @@ body {
 .video-status-skip { color: #FF9500; }
 .video-status-stopped { color: #8E8E93; }
 
-.video-number-downloading {
-    background: #007AFF;
-}
-.video-number-success { background: #34C759; }
-.video-number-error { background: #FF3B30; }
-.video-number-skip { background: #FF9500; }
-.video-number-stopped { background: #C6C6C8; }
 
 /* Video List Footer */
 .video-list-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 
@@ -1024,8 +1010,8 @@ body {
 .footer {
     text-align: center;
     color: #8E8E93;
-    margin-top: 14px;
-    padding: 10px;
+    margin-top: 4px;
+    padding: 4px;
 }
 
 /* Scrollbar */

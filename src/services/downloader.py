@@ -59,7 +59,7 @@ class YouTubeDownloader:
         if ffmpeg_loc:
             self.ydl_opts_base['ffmpeg_location'] = ffmpeg_loc
         self._progress = {}  # 현재 진행률 데이터
-        self._last_total = ''  # 다운로드 완료 시 파일크기 보관 (MP3 변환 후 사용)
+        self._last_total = ''  # 다운로드 완료 시 파일크기 보관 (병합 후 실제 크기 표시용)
         self._downloaded_bytes = 0  # 스트림별 크기 누적 (bestvideo+bestaudio 대응)
         self._cancel_event = threading.Event()
 
@@ -120,9 +120,14 @@ class YouTubeDownloader:
                 'postprocessor': d.get('postprocessor', ''),
             }
         elif status == 'finished':
+            filepath = d.get('info_dict', {}).get('filepath', '')
+            if filepath and os.path.exists(filepath):
+                total = self._format_bytes(os.path.getsize(filepath))
+            else:
+                total = self._last_total
             self._progress = {
                 'status': 'converting_done',
-                'total': self._last_total,
+                'total': total,
             }
 
     def get_video_info(self, video_id: str) -> Optional[Dict]:
@@ -392,18 +397,12 @@ class YouTubeDownloader:
         outtmpl = os.path.join(output_dir, '%(upload_date>%y%m%d)s_%(title)s.%(ext)s')
 
         if quality == 'audio':
-            format_string = 'bestaudio/best'
+            format_string = 'bestaudio[ext=m4a]'
             ydl_opts = {
                 **self.ydl_opts_base,
                 'format': format_string,
                 'outtmpl': outtmpl,
                 'progress_hooks': [self._progress_hook],
-                'postprocessor_hooks': [self._postprocessor_hook],
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
             }
         else:
             height = quality.replace('p', '') if quality != 'best' else ''
@@ -431,10 +430,6 @@ class YouTubeDownloader:
                     return None
 
                 filepath = ydl.prepare_filename(info)
-                # 오디오: mp3 변환 후 확장자 변경
-                if quality == 'audio':
-                    base, _ = os.path.splitext(filepath)
-                    filepath = base + '.mp3'
                 else:
                     # 병합 시 확장자가 바뀔 수 있으므로 mp4로 변경
                     base, _ = os.path.splitext(filepath)
