@@ -207,13 +207,17 @@ class YouTubeDownloader:
 
         # Format selection based on quality
         if quality == 'best':
-            format_string = 'best[ext=mp4]/best'
+            format_string = 'best[vcodec^=avc1][ext=mp4]/best[ext=mp4]/best'
         elif quality == 'audio':
             format_string = 'bestaudio[ext=m4a]/bestaudio'
         else:
             # Try to get specific quality
             height = quality.replace('p', '')
-            format_string = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={height}]'
+            format_string = (
+                f'bestvideo[height<={height}][vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/'
+                f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/'
+                f'best[height<={height}]'
+            )
 
         ydl_opts = {
             **self.ydl_opts_base,
@@ -392,9 +396,13 @@ class YouTubeDownloader:
         else:
             height = quality.replace('p', '') if quality != 'best' else ''
             if height:
-                format_string = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
+                format_string = (
+                    f'bestvideo[height<={height}][vcodec^=avc1]+bestaudio/'
+                    f'bestvideo[height<={height}]+bestaudio/'
+                    f'best[height<={height}]/best'
+                )
             else:
-                format_string = 'bestvideo+bestaudio/best'
+                format_string = 'bestvideo[vcodec^=avc1]+bestaudio/bestvideo+bestaudio/best'
 
             ydl_opts = {
                 **self.ydl_opts_base,
