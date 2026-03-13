@@ -13,75 +13,11 @@
         <!-- Header -->
         <header class="header">
             <div class="header-title">
-                <div id="appIcon" class="app-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 250" width="100%" height="100%">
-                        <defs>
-                            <style>
-                                @keyframes bob {
-                                    0%, 100% { transform: translateY(0); }
-                                    50% { transform: translateY(-6px); }
-                                }
-                                @keyframes boil {
-                                    0% { transform: translateY(0) scale(0.8); opacity: 0.8; }
-                                    100% { transform: translateY(-25px) scale(1.5); opacity: 0; }
-                                }
-                                .item-bob-1 { animation: bob 2s ease-in-out infinite; transform-origin: center; }
-                                .item-bob-2 { animation: bob 2.5s ease-in-out infinite 0.5s; transform-origin: center; }
-                                .item-bob-3 { animation: bob 1.8s ease-in-out infinite 0.2s; transform-origin: center; }
-                                .bubble { fill: rgba(255, 255, 255, 0.7); animation: boil 1.2s infinite ease-in; }
-                                .b1 { animation-delay: 0.1s; }
-                                .b2 { animation-delay: 0.6s; }
-                                .b3 { animation-delay: 0.3s; }
-                                .b4 { animation-delay: 0.9s; }
-                                .b5 { animation-delay: 0.4s; }
-                            </style>
-                        </defs>
-                        <path d="M 20 120 C 10 120, 10 150, 40 160" fill="none" stroke="#2d2b30" stroke-width="15" stroke-linecap="round"/>
-                        <path d="M 280 120 C 290 120, 290 150, 260 160" fill="none" stroke="#2d2b30" stroke-width="15" stroke-linecap="round"/>
-                        <path d="M 40 120 C 40 230, 260 230, 260 120 Z" fill="#3a3740" />
-                        <ellipse cx="150" cy="120" rx="110" ry="40" fill="#4d4955" />
-                        <ellipse cx="150" cy="120" rx="100" ry="35" fill="#c48a56" />
-                        <g class="item-bob-2">
-                            <path d="M 60 110 C 50 70, 90 60, 100 100 C 110 60, 140 70, 130 110 Z" fill="#8bc34a" />
-                            <path d="M 240 115 C 250 80, 210 60, 190 90 C 170 60, 140 80, 150 115 Z" fill="#7cb342" />
-                            <ellipse cx="200" cy="100" rx="25" ry="35" fill="#e57373" transform="rotate(20 200 100)" />
-                            <ellipse cx="200" cy="100" rx="15" ry="25" fill="#ffcdd2" transform="rotate(20 200 100)" />
-                        </g>
-                        <g class="item-bob-3">
-                            <rect x="70" y="80" width="4" height="40" rx="2" fill="#fff59d" />
-                            <circle cx="72" cy="80" r="6" fill="#fff" />
-                            <rect x="80" y="75" width="4" height="45" rx="2" fill="#fff59d" />
-                            <circle cx="82" cy="75" r="6" fill="#fff" />
-                            <rect x="90" y="82" width="4" height="38" rx="2" fill="#fff59d" />
-                            <circle cx="92" cy="82" r="6" fill="#fff" />
-                        </g>
-                        <g class="item-bob-1">
-                            <rect x="110" y="100" width="80" height="56" rx="16" fill="#ff0000" />
-                            <polygon points="140,113 140,143 165,128" fill="#ffffff" />
-                        </g>
-                        <g class="item-bob-2">
-                            <rect x="65" y="115" width="50" height="35" rx="10" fill="#ff0000" transform="rotate(-15 90 130)" />
-                            <polygon points="85,123 85,142 100,132.5" fill="#ffffff" transform="rotate(-15 90 130)" />
-                        </g>
-                        <g class="item-bob-3">
-                            <rect x="180" y="125" width="45" height="30" rx="8" fill="#ff0000" transform="rotate(10 200 140)" />
-                            <polygon points="195,133 195,147 210,140" fill="#ffffff" transform="rotate(10 200 140)" />
-                        </g>
-                        <circle class="bubble b1" cx="100" cy="130" r="4" />
-                        <circle class="bubble b2" cx="210" cy="110" r="6" />
-                        <circle class="bubble b3" cx="150" cy="140" r="5" />
-                        <circle class="bubble b4" cx="70" cy="110" r="3" />
-                        <circle class="bubble b5" cx="180" cy="100" r="4" />
-                        <circle class="bubble b1" cx="230" cy="125" r="5" />
-                        <circle class="bubble b3" cx="130" cy="105" r="4" />
-                    </svg>
+                <img src="/static/images/chita-title.webp?v=3" alt="YT Chita" class="title-image">
+                <div class="header-title-status">
+                    <button id="settingsBtn" class="btn-pill btn-pill-muted">설정</button>
+                    <span id="apiKeyStatus" class="api-key-badge"></span>
                 </div>
-                <h1>YT Chita</h1>
-                <p style="font-size: 12px; color: #999; margin: -4px 0 0 0;">The Lightning-Fast Bulk Downloader</p>
-            </div>
-            <div id="status" class="status">
-                <button id="settingsBtn" class="btn-pill btn-pill-muted">설정</button>
-                <span id="apiKeyStatus" class="api-key-badge"></span>
             </div>
             <span id="ytdlpVersion" class="version"></span>
         </header>
@@ -234,7 +170,87 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Made in Korea <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f0-1f1f7.svg" alt="🇰🇷" style="height:1em;vertical-align:-0.1em"> 대한민국 만세 <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f0-1f1f7.svg" alt="🇰🇷" style="height:1em;vertical-align:-0.1em"> 독도는 우리 땅</p>
+            <p>
+                <span id="appIcon" class="app-icon-footer">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 250" width="100%" height="100%">
+                        <defs>
+                            <style>
+                                @keyframes bob {
+                                    0%, 100% { transform: translateY(0) rotate(0deg); }
+                                    25% { transform: translateY(-14px) rotate(3deg); }
+                                    75% { transform: translateY(-4px) rotate(-3deg); }
+                                }
+                                @keyframes boil {
+                                    0% { transform: translateY(0) scale(1); opacity: 1; }
+                                    100% { transform: translateY(-40px) scale(2); opacity: 0; }
+                                }
+                                @keyframes shake {
+                                    0%, 100% { transform: translateX(0); }
+                                    25% { transform: translateX(-2px) rotate(-1deg); }
+                                    75% { transform: translateX(2px) rotate(1deg); }
+                                }
+                                .item-bob-1 { animation: bob 0.8s ease-in-out infinite; transform-origin: center; }
+                                .item-bob-2 { animation: bob 1.0s ease-in-out infinite 0.2s; transform-origin: center; }
+                                .item-bob-3 { animation: bob 0.7s ease-in-out infinite 0.1s; transform-origin: center; }
+                                .bubble { fill: rgba(255, 255, 255, 0.9); animation: boil 0.7s infinite ease-out; }
+                                .pot-body { animation: shake 0.5s ease-in-out infinite; transform-origin: 150px 170px; }
+                                .b1 { animation-delay: 0s; }
+                                .b2 { animation-delay: 0.15s; }
+                                .b3 { animation-delay: 0.3s; }
+                                .b4 { animation-delay: 0.45s; }
+                                .b5 { animation-delay: 0.1s; }
+                                .b6 { animation-delay: 0.55s; }
+                                .b7 { animation-delay: 0.25s; }
+                                .b8 { animation-delay: 0.4s; }
+                            </style>
+                        </defs>
+                        <g class="pot-body">
+                        <path d="M 20 120 C 10 120, 10 150, 40 160" fill="none" stroke="#2d2b30" stroke-width="15" stroke-linecap="round"/>
+                        <path d="M 280 120 C 290 120, 290 150, 260 160" fill="none" stroke="#2d2b30" stroke-width="15" stroke-linecap="round"/>
+                        <path d="M 40 120 C 40 230, 260 230, 260 120 Z" fill="#3a3740" />
+                        <ellipse cx="150" cy="120" rx="110" ry="40" fill="#4d4955" />
+                        <ellipse cx="150" cy="120" rx="100" ry="35" fill="#c48a56" />
+                        <g class="item-bob-2">
+                            <path d="M 60 110 C 50 70, 90 60, 100 100 C 110 60, 140 70, 130 110 Z" fill="#8bc34a" />
+                            <path d="M 240 115 C 250 80, 210 60, 190 90 C 170 60, 140 80, 150 115 Z" fill="#7cb342" />
+                            <ellipse cx="200" cy="100" rx="25" ry="35" fill="#e57373" transform="rotate(20 200 100)" />
+                            <ellipse cx="200" cy="100" rx="15" ry="25" fill="#ffcdd2" transform="rotate(20 200 100)" />
+                        </g>
+                        <g class="item-bob-3">
+                            <rect x="70" y="80" width="4" height="40" rx="2" fill="#fff59d" />
+                            <circle cx="72" cy="80" r="6" fill="#fff" />
+                            <rect x="80" y="75" width="4" height="45" rx="2" fill="#fff59d" />
+                            <circle cx="82" cy="75" r="6" fill="#fff" />
+                            <rect x="90" y="82" width="4" height="38" rx="2" fill="#fff59d" />
+                            <circle cx="92" cy="82" r="6" fill="#fff" />
+                        </g>
+                        <g class="item-bob-1">
+                            <rect x="110" y="100" width="80" height="56" rx="16" fill="#ff0000" />
+                            <polygon points="140,113 140,143 165,128" fill="#ffffff" />
+                        </g>
+                        <g class="item-bob-2">
+                            <rect x="65" y="115" width="50" height="35" rx="10" fill="#ff0000" transform="rotate(-15 90 130)" />
+                            <polygon points="85,123 85,142 100,132.5" fill="#ffffff" transform="rotate(-15 90 130)" />
+                        </g>
+                        <g class="item-bob-3">
+                            <rect x="180" y="125" width="45" height="30" rx="8" fill="#ff0000" transform="rotate(10 200 140)" />
+                            <polygon points="195,133 195,147 210,140" fill="#ffffff" transform="rotate(10 200 140)" />
+                        </g>
+                        </g>
+                        <circle class="bubble b1" cx="100" cy="120" r="6" />
+                        <circle class="bubble b2" cx="210" cy="105" r="8" />
+                        <circle class="bubble b3" cx="150" cy="125" r="7" />
+                        <circle class="bubble b4" cx="70" cy="110" r="5" />
+                        <circle class="bubble b5" cx="180" cy="100" r="6" />
+                        <circle class="bubble b6" cx="230" cy="115" r="7" />
+                        <circle class="bubble b7" cx="130" cy="105" r="5" />
+                        <circle class="bubble b8" cx="120" cy="115" r="6" />
+                        <circle class="bubble b1" cx="170" cy="110" r="5" />
+                        <circle class="bubble b3" cx="90" cy="118" r="4" />
+                    </svg>
+                </span>
+                Made in Korea <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f0-1f1f7.svg" alt="🇰🇷" style="height:1em;vertical-align:-0.1em"> 대한민국 만세 <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f0-1f1f7.svg" alt="🇰🇷" style="height:1em;vertical-align:-0.1em"> 독도는 우리 땅
+            </p>
         </footer>
     </div>
 

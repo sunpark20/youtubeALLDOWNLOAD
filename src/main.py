@@ -213,7 +213,7 @@ def main():
     window = webview.create_window(
         title=Config.APP_NAME,
         url=app_url,
-        width=1200,
+        width=1300,
         height=900,
         resizable=True,
         frameless=False,
