@@ -214,6 +214,13 @@ async function init() {
     if (elements.deleteApiKeyBtn) {
         elements.deleteApiKeyBtn.addEventListener('click', deleteApiKey);
     }
+    document.getElementById('openLogFolderBtn')?.addEventListener('click', async () => {
+        try {
+            await fetch(`${API_BASE}/open-log-folder`, { method: 'POST' });
+        } catch (e) {
+            alert('로그 폴더를 열 수 없습니다.');
+        }
+    });
     elements.helpBtn.addEventListener('click', () => elements.helpModal.style.display = 'flex');
     elements.helpCloseBtn.addEventListener('click', () => elements.helpModal.style.display = 'none');
     elements.helpModal.addEventListener('click', (e) => {

@@ -685,6 +685,29 @@ async def start_download(request: DownloadExtractRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/open-log-folder")
+async def open_log_folder():
+    """Open the log folder in the system file manager"""
+    import subprocess
+    import platform
+    import os
+    from utils.logger import _get_log_dir
+
+    log_dir = str(_get_log_dir())
+
+    try:
+        system = platform.system()
+        if system == "Darwin":
+            subprocess.Popen(["open", log_dir])
+        elif system == "Windows":
+            os.startfile(log_dir)
+        else:
+            subprocess.Popen(["xdg-open", log_dir])
+        return {"success": True, "path": log_dir}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/open-folder")
 async def open_folder(request: dict):
     """Open a folder in the system file manager"""

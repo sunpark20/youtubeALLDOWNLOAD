@@ -145,19 +145,21 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## v1.2.5 업데이트
+            ## v1.2.6 업데이트
 
             ### 중복 실행 방지
             - Windows에서 .exe를 여러 번 클릭해도 인스턴스가 하나만 실행됨
             - 포트 체크(크로스 플랫폼) + Named Mutex(Windows) 이중 방지
-            - macOS에서도 터미널 중복 실행 시 자동 종료
+
+            ### 로깅 시스템 개선
+            - 모든 모듈의 로그가 파일에 정상 기록되도록 수정
+            - 설정 > "로그 폴더 열기" 버튼 추가 (macOS/Windows)
 
             ### 2영상 병렬 다운로드
             - 최대 2개 영상을 동시에 다운로드하여 속도 향상
-            - yt-dlp 프로세스 로그 캡처 개선
 
-            ### 커맨드 정비
-            - 슬래시 커맨드 파일명에 c- 접두사 추가하여 구분 용이
+            ### GitHub Actions Node.js 24 대응
+            - 전체 Actions 최신 버전으로 업데이트
           files: |
             YB-Mac-Intel/YB-Mac-Intel.dmg
             YB-Mac-M-Chip/YB-Mac-M-Chip.dmg
