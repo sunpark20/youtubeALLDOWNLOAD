@@ -48,23 +48,12 @@ def create_dmg_background(output: Path | str = None) -> Path:
         fill=arrow_color,
     )
 
-    # 텍스트
+    # 하단 안내 텍스트만 표시 (아이콘 레이블은 macOS Finder가 자동 표시하므로 생략)
     try:
-        font_large = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 16)
         font_small = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 13)
     except OSError:
-        font_large = ImageFont.load_default()
-        font_small = font_large
+        font_small = ImageFont.load_default()
 
-    text_color = (100, 100, 100)
-
-    # 앱 이름 레이블 (왼쪽 아이콘 아래)
-    draw.text((155, 250), "YT-Chita", fill=text_color, font=font_large, anchor="mt")
-
-    # Applications 레이블 (오른쪽 아이콘 아래)
-    draw.text((480, 250), "Applications", fill=text_color, font=font_large, anchor="mt")
-
-    # 하단 안내
     draw.text(
         (W // 2, H - 40),
         "Drag YT-Chita to Applications to install",

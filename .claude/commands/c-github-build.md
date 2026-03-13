@@ -31,7 +31,7 @@
 1. **버전 번호 확인**: 사용자에게 정확한 버전 번호를 반드시 확인받고 진행
 2. **버전 올리기**: `src/utils/config.py`의 `APP_VERSION` 수정
 3. **릴리즈 노트 작성**: `build.yml`의 `body:` 섹션 전체를 새 버전에 맞게 수정
-4. **빌드 전 검증**: `python -c "import py_compile; ..."` 등으로 주요 파일 구문 오류 확인
+4. **빌드 전 검증**: `python -c "import py_compile; ..."` 등으로 주요 파일 구문 오류 확인. `git ls-files YT-Chita.spec`으로 spec 파일이 tracked 상태인지도 확인
 5. **커밋 & 푸시**
 6. **태그 생성 & 푸시** → 빌드 자동 트리거
 7. `gh run watch`로 빌드 모니터링
@@ -59,6 +59,7 @@ git push origin v1.x.x
 | Notarization 실패 | Apple 인증서/비밀번호 만료 | GitHub Secrets 확인 |
 | FFmpeg 다운로드 실패 | 외부 URL 변경 | `build.yml`의 FFmpeg URL 확인 |
 | PyInstaller 에러 | 의존성 변경 | `requirements.txt`, `.spec` 파일 확인 |
+| Spec file not found | `.gitignore`에 `*.spec` 포함 | `.gitignore` 수정 후 `git add YT-Chita.spec` |
 
 ## 관련 파일
 
