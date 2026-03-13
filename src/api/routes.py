@@ -20,7 +20,7 @@ from .models import (
     VideoInfo, PlaylistInfo
 )
 from services.youtube_api import YouTubeAPIService
-from services.downloader import YouTubeDownloader
+from services.downloader import YTBulkDownloader
 from services.duplicate_filter import DuplicateFilter
 from services.updater import YtdlpUpdater
 from utils.config import Config
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/api")
 
 # Service instances (will be initialized with API key)
 youtube_service: YouTubeAPIService = None
-downloader = YouTubeDownloader()
+downloader = YTBulkDownloader()
 duplicate_filter = DuplicateFilter()
 updater = YtdlpUpdater()
 
@@ -325,12 +325,23 @@ async def analyze_channel_playlists(request: ChannelAnalyzeRequest):
             logger.info(f"Using yt-dlp fallback for channel playlists analysis: {request.url}")
             
             import yt_dlp
+            import re as _re
             # Make sure url ends with /playlists
             url = request.url.rstrip('/')
             if not url.endswith('/playlists'):
                 if url.endswith('/videos'):
                     url = url[:-7]
                 url += '/playlists'
+
+            # 비-ASCII 핸들(@한글이름) → channel ID로 변환
+            _handle_match = _re.search(r'/@([^/]+)', url)
+            if _handle_match:
+                _handle = _handle_match.group(1)
+                if any(ord(c) > 127 for c in _handle):
+                    _cid = downloader._resolve_handle_to_channel_id(_handle)
+                    if _cid:
+                        url = f"https://www.youtube.com/channel/{_cid}/playlists"
+                        logger.info(f"Resolved non-ASCII handle @{_handle} → {_cid}")
                 
             ydl_opts = {'quiet': True, 'extract_flat': True}
             try:

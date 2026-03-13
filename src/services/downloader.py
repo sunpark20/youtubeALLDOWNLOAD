@@ -46,7 +46,7 @@ def _get_ffmpeg_location() -> str:
     return ''  # 시스템 PATH에서 찾음 (이미 PATH에 있는 경우)
 
 
-class YouTubeDownloader:
+class YTBulkDownloader:
     """yt-dlp wrapper for YouTube downloads"""
 
     def __init__(self):
@@ -235,6 +235,19 @@ class YouTubeDownloader:
             logger.error(f"Error getting download URL for {video_id}: {e}")
             return None
 
+    def _resolve_handle_to_channel_id(self, handle: str) -> Optional[str]:
+        """비-ASCII 핸들(@한글이름)을 ytsearch로 channel_id로 변환"""
+        try:
+            ydl_opts = {'quiet': True, 'no_warnings': True, 'extract_flat': True}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f'ytsearch1:{handle}', download=False)
+                entries = info.get('entries', [])
+                if entries and entries[0]:
+                    return entries[0].get('channel_id')
+        except Exception as e:
+            logger.warning(f"Failed to resolve handle @{handle}: {e}")
+        return None
+
     def get_channel_videos(self, channel_url: str, max_videos: int = 500) -> List[Dict]:
         """
         Get video list from a channel URL using yt-dlp (fallback when no API key).
@@ -249,17 +262,21 @@ class YouTubeDownloader:
         # Ensure URL points to the channel's videos tab
         url = channel_url.rstrip('/')
 
-        # Windows yt-dlp에서 한글 등 비-ASCII 경로가 404를 반환하는 문제 방지
-        from urllib.parse import quote, urlparse, urlunparse
-        parsed = urlparse(url)
-        if parsed.scheme and parsed.netloc:
-            url = urlunparse(parsed._replace(path=quote(parsed.path, safe='/@')))
-
         # Remove other channel tabs if present
         for tab in ['/featured', '/playlists', '/shorts', '/streams', '/community']:
             if url.endswith(tab):
                 url = url[:-len(tab)]
                 break
+
+        # 비-ASCII 핸들(@한글이름) → channel ID로 변환 (yt-dlp 한글 핸들 404 버그 우회)
+        handle_match = re.search(r'/@([^/]+)', url)
+        if handle_match:
+            handle = handle_match.group(1)
+            if any(ord(c) > 127 for c in handle):
+                channel_id = self._resolve_handle_to_channel_id(handle)
+                if channel_id:
+                    url = f"https://www.youtube.com/channel/{channel_id}"
+                    logger.info(f"Resolved non-ASCII handle @{handle} → {channel_id}")
 
         if not url.endswith('/videos'):
             url += '/videos'
@@ -566,7 +583,7 @@ if __name__ == "__main__":
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-    downloader = YouTubeDownloader()
+    downloader = YTBulkDownloader()
 
     # Test with a video ID (replace with actual ID)
     # test_id = "dQw4w9WgXcQ"

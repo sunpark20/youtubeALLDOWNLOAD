@@ -1,4 +1,4 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 source venv/bin/activate
-python src/main.py
+python3 src/main.py

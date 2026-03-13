@@ -828,7 +828,7 @@ async function deleteApiKey() {
  * Returns { displayPath, folderPath }
  */
 function buildSavePaths() {
-    const base = '~/Downloads/YouTubeDownloader/';
+    const base = '~/Downloads/YT-Chita/';
     if (!currentChannelName) {
         return { displayPath: base, folderPath: base };
     }

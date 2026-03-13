@@ -65,7 +65,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --clean --noconfirm YouTubeDownloader.spec
+          pyinstaller --clean --noconfirm YT-Chita.spec
 
       - name: Code Sign and Notarize
         env:
@@ -73,15 +73,15 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: |
-          APP_PATH="dist/YouTubeDownloader.app"
+          APP_PATH="dist/YT-Chita.app"
           codesign --force --options runtime --deep --sign "Developer ID Application" --entitlements entitlements.plist --timestamp "$APP_PATH"
-          ditto -c -k --keepParent "$APP_PATH" dist/YouTubeDownloader.zip
-          xcrun notarytool submit dist/YouTubeDownloader.zip --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
+          ditto -c -k --keepParent "$APP_PATH" dist/YT-Chita.zip
+          xcrun notarytool submit dist/YT-Chita.zip --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
           xcrun stapler staple "$APP_PATH"
 
       - name: Create DMG
         run: |
-          hdiutil create -volname "YouTubeDownloader" -srcfolder dist/YouTubeDownloader.app -ov -format UDZO "dist/YB-Mac-${{ matrix.label }}.dmg"
+          hdiutil create -volname "YT-Chita" -srcfolder dist/YT-Chita.app -ov -format UDZO "dist/YB-Mac-${{ matrix.label }}.dmg"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
@@ -110,19 +110,19 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --clean --noconfirm YouTubeDownloader.spec
+          pyinstaller --clean --noconfirm YT-Chita.spec
 
       - name: Download FFmpeg for Windows
         run: |
           curl -L https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -o ffmpeg.zip
           Expand-Archive ffmpeg.zip -DestinationPath .
-          if (!(Test-Path "dist/YouTubeDownloader")) { New-Item -ItemType Directory -Force -Path "dist/YouTubeDownloader" }
-          Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe dist/YouTubeDownloader/ffmpeg.exe -Force
-          Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe dist/YouTubeDownloader/ffprobe.exe -Force
+          if (!(Test-Path "dist/YT-Chita")) { New-Item -ItemType Directory -Force -Path "dist/YT-Chita" }
+          Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe dist/YT-Chita/ffmpeg.exe -Force
+          Copy-Item ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe dist/YT-Chita/ffprobe.exe -Force
 
       - name: Zip Windows Release
         run: |
-          Compress-Archive -Path dist/YouTubeDownloader/* -DestinationPath dist/YB-Windows10_11-64bit.zip
+          Compress-Archive -Path dist/YT-Chita/* -DestinationPath dist/YB-Windows10_11-64bit.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7

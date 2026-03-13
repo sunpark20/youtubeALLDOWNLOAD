@@ -14,12 +14,12 @@ from datetime import datetime
 def _get_log_dir() -> Path:
     """Return platform-appropriate log directory."""
     if platform.system() == "Darwin":
-        log_dir = Path.home() / "Library" / "Logs" / "YouTubeDownloader"
+        log_dir = Path.home() / "Library" / "Logs" / "YT-Chita"
     elif platform.system() == "Windows":
         import os
-        log_dir = Path(os.environ.get("APPDATA", Path.home())) / "YouTubeDownloader" / "Logs"
+        log_dir = Path(os.environ.get("APPDATA", Path.home())) / "YT-Chita" / "Logs"
     else:
-        log_dir = Path.home() / ".local" / "share" / "YouTubeDownloader" / "logs"
+        log_dir = Path.home() / ".local" / "share" / "YT-Chita" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
@@ -61,7 +61,7 @@ def _setup_root_logger(level: int = logging.INFO):
         print(f"[Logger] Could not create file handler: {e}", file=sys.stderr)
 
 
-def setup_logger(name: str = "YouTubeDownloader", level: int = logging.INFO) -> logging.Logger:
+def setup_logger(name: str = "YTBulkDownloader", level: int = logging.INFO) -> logging.Logger:
     """
     Setup and configure application logger
 

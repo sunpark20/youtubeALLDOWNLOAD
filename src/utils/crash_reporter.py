@@ -76,12 +76,12 @@ def _read_recent_log(lines: int = 50) -> str:
     """Read the last *lines* from today's log file."""
     try:
         if platform.system() == "Darwin":
-            log_dir = Path.home() / "Library" / "Logs" / "YouTubeDownloader"
+            log_dir = Path.home() / "Library" / "Logs" / "YT-Chita"
         elif platform.system() == "Windows":
             import os as _os
-            log_dir = Path(_os.environ.get("APPDATA", Path.home())) / "YouTubeDownloader" / "Logs"
+            log_dir = Path(_os.environ.get("APPDATA", Path.home())) / "YT-Chita" / "Logs"
         else:
-            log_dir = Path.home() / ".local" / "share" / "YouTubeDownloader" / "logs"
+            log_dir = Path.home() / ".local" / "share" / "YT-Chita" / "logs"
 
         log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d')}.log"
         if not log_file.exists():

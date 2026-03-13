@@ -28,7 +28,7 @@ class Config:
     """Application configuration"""
 
     # Application
-    APP_NAME = "YouTube BULK DOWNLOADER"
+    APP_NAME = "YT Chita"
     APP_VERSION = "1.2.5"
 
     # Server
@@ -41,7 +41,7 @@ class Config:
     # Paths
     BASE_DIR = get_base_path()
     FRONTEND_DIR = BASE_DIR / "src" / "frontend"
-    DOWNLOADS_DIR = Path.home() / "Downloads" / "YouTubeDownloader"
+    DOWNLOADS_DIR = Path.home() / "Downloads" / "YT-Chita"
 
     # Download settings
     DEFAULT_QUALITY = "720p"

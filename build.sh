@@ -1,11 +1,11 @@
 #!/bin/bash
-# YouTubeDownloader 빌드 및 코드 서명 스크립트
+# YT-Chita 빌드 및 코드 서명 스크립트
 set -e
 
 # =============================================================
 # 설정
 # =============================================================
-APP_NAME="YouTubeDownloader"
+APP_NAME="YT-Chita"
 BUNDLE_ID="com.sunpark.YouTubeDownloader"
 SIGN_IDENTITY="Developer ID Application: sunguk park (GA2LMK5XL2)"
 ENTITLEMENTS="entitlements.plist"
@@ -29,7 +29,7 @@ rm -rf build dist
 echo ""
 echo "[2/4] PyInstaller 빌드 중..."
 source venv/bin/activate
-pyinstaller ${APP_NAME}.spec --clean --noconfirm
+pyinstaller YT-Chita.spec --clean --noconfirm
 echo "✅ 빌드 완료"
 
 # =============================================================
