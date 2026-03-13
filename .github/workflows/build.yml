@@ -22,10 +22,10 @@ jobs:
     name: Build macOS (${{ matrix.arch }})
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -84,7 +84,7 @@ jobs:
           hdiutil create -volname "YouTubeDownloader" -srcfolder dist/YouTubeDownloader.app -ov -format UDZO "dist/YB-Mac-${{ matrix.label }}.dmg"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: YB-Mac-${{ matrix.label }}
           path: dist/YB-Mac-${{ matrix.label }}.dmg
@@ -94,10 +94,10 @@ jobs:
     name: Build Windows (x64)
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -125,7 +125,7 @@ jobs:
           Compress-Archive -Path dist/YouTubeDownloader/* -DestinationPath dist/YB-Windows10_11-64bit.zip
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: YB-Windows10_11-64bit
           path: dist/YB-Windows10_11-64bit.zip
@@ -138,10 +138,10 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           body: |
