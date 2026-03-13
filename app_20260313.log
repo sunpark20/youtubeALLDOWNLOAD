@@ -51,3 +51,32 @@
 2026-03-13 19:03:05 - Main - INFO - ======================================================================
 2026-03-13 19:03:17 - api.routes - INFO - Using yt-dlp fallback for channel analysis: https://www.youtube.com/@빠니보틀
 2026-03-13 19:03:22 - services.downloader - ERROR - Error getting channel videos via yt-dlp: ERROR: [youtube:tab] @빠니보틀: Unable to download API page: HTTP Error 404: Not Found (caused by <HTTPError 404: Not Found>)
+2026-03-13 19:17:25 - Main - INFO - Application shut down
+2026-03-13 19:19:04 - Main - INFO - ======================================================================
+2026-03-13 19:19:04 - Main - INFO - YouTube BULK DOWNLOADER v1.2.6
+2026-03-13 19:19:04 - Main - INFO - ======================================================================
+2026-03-13 19:19:05 - Main - INFO - Python 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+2026-03-13 19:19:05 - Main - INFO - Platform: Windows-10-10.0.26100-SP0
+2026-03-13 19:19:05 - Main - INFO - Architecture: AMD64
+2026-03-13 19:19:05 - Main - WARNING - ffmpeg NOT found in bundle at C:\Users\sunguk\Downloads\YB-Windows10_11-64bit (1)\ffmpeg
+2026-03-13 19:19:05 - Main - INFO - ffmpeg (PATH fallback): .\ffmpeg.EXE
+2026-03-13 19:19:05 - Main - INFO - Checking yt-dlp updates...
+2026-03-13 19:19:05 - services.updater - INFO - ✅ yt-dlp auto-update disabled in packaged app
+2026-03-13 19:19:05 - Main - INFO - ✅ yt-dlp auto-update disabled in packaged app
+2026-03-13 19:19:05 - Main - INFO - Starting background server...
+2026-03-13 19:19:06 - Server - INFO - Static files mounted from: C:\Users\sunguk\Downloads\YB-Windows10_11-64bit (1)\_internal\src\frontend
+2026-03-13 19:19:06 - Main - INFO - Starting FastAPI server on 127.0.0.1:8000
+2026-03-13 19:19:06 - Server - INFO - ============================================================
+2026-03-13 19:19:06 - Server - INFO - YouTube BULK DOWNLOADER v1.2.6
+2026-03-13 19:19:06 - Server - INFO - ============================================================
+2026-03-13 19:19:06 - api.routes - WARNING - YouTube API key not set - some features will be limited
+2026-03-13 19:19:06 - Server - INFO - Server running on http://127.0.0.1:8000
+2026-03-13 19:19:06 - Server - INFO - Downloads directory: C:\Users\sunguk\Downloads\YouTubeDownloader
+2026-03-13 19:19:06 - Server - INFO - yt-dlp version: 2026.03.13
+2026-03-13 19:19:06 - Server - INFO - Application started successfully!
+2026-03-13 19:19:06 - Main - INFO - Creating desktop window...
+2026-03-13 19:19:06 - Main - INFO - Window created: http://127.0.0.1:8000
+2026-03-13 19:19:06 - Main - INFO - Application starting...
+2026-03-13 19:19:06 - Main - INFO - ======================================================================
+2026-03-13 19:19:18 - api.routes - INFO - Using yt-dlp fallback for channel analysis: https://www.youtube.com/@빠니보틀
+2026-03-13 19:19:22 - services.downloader - ERROR - Error getting channel videos via yt-dlp: ERROR: [youtube:tab] @빠니보틀: Unable to download API page: HTTP Error 404: Not Found (caused by <HTTPError 404: Not Found>)
