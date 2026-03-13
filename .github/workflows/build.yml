@@ -79,9 +79,24 @@ jobs:
           xcrun notarytool submit dist/YT-Chita.zip --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
           xcrun stapler staple "$APP_PATH"
 
+      - name: Install create-dmg
+        run: brew install create-dmg
+
       - name: Create DMG
         run: |
-          hdiutil create -volname "YT-Chita" -srcfolder dist/YT-Chita.app -ov -format UDZO "dist/YB-Mac-${{ matrix.label }}.dmg"
+          create-dmg \
+            --volname "YT-Chita" \
+            --volicon "resource/icon.icns" \
+            --background "resource/dmg-background.png" \
+            --window-pos 200 120 \
+            --window-size 660 400 \
+            --icon-size 80 \
+            --icon "YT-Chita.app" 180 190 \
+            --app-drop-link 480 190 \
+            --hide-extension "YT-Chita.app" \
+            --no-internet-enable \
+            "dist/YB-Mac-${{ matrix.label }}.dmg" \
+            "dist/YT-Chita.app"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
