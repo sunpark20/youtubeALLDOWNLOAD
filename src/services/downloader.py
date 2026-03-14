@@ -55,6 +55,7 @@ class YTBulkDownloader:
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'file_access_retries': 5,
             'extractor_args': {'youtube': {'lang': ['en']}},
             # retry: 실패 시 재시도
             'retries': 3,
@@ -527,13 +528,22 @@ class YTBulkDownloader:
                     logger.info(f"Age-restricted video skipped: {video_id}")
                     return "AGE_RESTRICTED_SKIP"
 
+                # 리네임 에러 → 임시 파일 정리 후 재시도
+                if 'Unable to rename file' in error_msg and attempt < max_attempts - 1:
+                    logger.warning(f"Rename failed for {video_id}, cleaning up and retrying... (attempt {attempt + 1}/{max_attempts})")
+                    self._cleanup_partial_files(output_dir, video_id)
+                    self._downloaded_bytes_map[video_id] = 0
+                    time.sleep(3)
+                    continue
+
                 logger.error(f"Error downloading {video_id}: {e}")
+                self._cleanup_partial_files(output_dir, video_id)
                 return None
 
     @staticmethod
     def _cleanup_partial_files(output_dir: str, video_id: str):
         """취소 시 남은 .part / .ytdl 임시 파일 삭제"""
-        for pattern in ('*.part', '*.ytdl', '*.part-Frag*'):
+        for pattern in ('*.part', '*.ytdl', '*.part-Frag*', '*.temp.*'):
             for f in glob.glob(os.path.join(output_dir, pattern)):
                 try:
                     os.remove(f)

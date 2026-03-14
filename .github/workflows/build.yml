@@ -160,22 +160,17 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## v1.2.6 업데이트
+            ## v1.2.7 Bug Fix
 
-            ### UI 영어화
-            - 버튼, 라벨, 상태 메시지 등 주요 UI를 영어로 변경
-            - 도움말(Help) 모달 영어 가이드 이미지 적용
-            - 로딩 메시지 한/영 교대 표시 (명언 + 유머)
-            - 다운로드 상태: ✔, Skip, Failed, Stopped 등 영어 표기
+            ### Windows: WebView2 Runtime Auto-Install
+            - Windows 10에서 WebView2 미설치 시 앱이 무응답으로 크래시하던 문제 수정
+            - 앱 시작 시 WebView2 자동 감지 → 없으면 MessageBox 안내 후 자동 설치
+            - UAC 권한 요청으로 설치 진행, 실패 시 수동 설치 URL 안내
 
-            ### 아이콘 개선
-            - 다운로드, 폴더 열기, 저장/삭제 버튼 아이콘화
-            - 설정 버튼 ⚙ 아이콘 추가
-
-            ### 기타 개선
-            - 파일 크기 표기 KiB/MiB → KB/MB로 변경
-            - yt-dlp 메타데이터 언어 설정 개선
-            - README 영어 버전 추가, 라이선스 표기 추가
+            ### Download Stability
+            - 파일 리네임 실패(Unable to rename file) 시 임시 파일 정리 후 자동 재시도
+            - file_access_retries 옵션 추가로 파일 접근 안정성 향상
+            - 다운로드 실패 시 .temp.* 임시 파일도 함께 정리
           files: |
             YB-Mac-Intel/YB-Mac-Intel.dmg
             YB-Mac-M-Chip/YB-Mac-M-Chip.dmg

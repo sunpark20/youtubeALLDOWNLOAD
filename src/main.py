@@ -41,7 +41,7 @@ def _check_single_instance():
     # 2) Windows Named Mutex — 더 확실한 방지
     if sys.platform == 'win32':
         import ctypes
-        kernel32 = ctypes.windll.kernel32
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
         mutex_name = "Global\\YouTubeBulkDownloaderMutex"
         mutex = kernel32.CreateMutexW(None, True, mutex_name)
         last_error = ctypes.get_last_error()
@@ -161,6 +161,11 @@ def main():
     logger.info("=" * 70)
 
     _check_single_instance()
+
+    # Ensure WebView2 Runtime is available (Windows only)
+    if sys.platform == 'win32':
+        from utils.webview2_setup import ensure_webview2
+        ensure_webview2()
 
     # Step 0: Validate environment (PyObjC, ffmpeg, arch)
     _check_environment()
