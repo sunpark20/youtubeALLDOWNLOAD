@@ -254,7 +254,7 @@ class YouTubeAPIService:
             logger.error(f"Error getting playlist info: {e}")
             return None
 
-    def get_playlist_videos(self, playlist_id: str, max_results: int = 500) -> List[Dict]:
+    def get_playlist_videos(self, playlist_id: str, max_results: int = 2000) -> List[Dict]:
         """
         Get all video IDs from a playlist
 
@@ -351,7 +351,7 @@ class YouTubeAPIService:
         seconds = int(match.group(3) or 0)
         return hours * 3600 + minutes * 60 + seconds
 
-    def get_channel_videos(self, channel_id: str, max_results: int = 500) -> List[Dict]:
+    def get_channel_videos(self, channel_id: str, max_results: int = 2000) -> List[Dict]:
         """
         Get all uploaded videos from a channel
 

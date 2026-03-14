@@ -17,7 +17,7 @@ jobs:
             label: Intel
           - os: macos-latest   # Silicon (arm64)
             arch: arm64
-            label: M-Chip
+            label: MChip
     runs-on: ${{ matrix.os }}
     name: Build macOS (${{ matrix.arch }})
     steps:
@@ -95,14 +95,14 @@ jobs:
             --app-drop-link 480 190 \
             --hide-extension "YT-Chita.app" \
             --no-internet-enable \
-            "dist/YB-Mac-${{ matrix.label }}.dmg" \
+            "dist/YTChita-Mac-${{ matrix.label }}.dmg" \
             "dist/YT-Chita.app"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: YB-Mac-${{ matrix.label }}
-          path: dist/YB-Mac-${{ matrix.label }}.dmg
+          name: YTChita-Mac-${{ matrix.label }}
+          path: dist/YTChita-Mac-${{ matrix.label }}.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -137,13 +137,13 @@ jobs:
 
       - name: Zip Windows Release
         run: |
-          Compress-Archive -Path dist/YT-Chita/* -DestinationPath dist/YB-Windows10_11-64bit.zip
+          Compress-Archive -Path dist/YT-Chita/* -DestinationPath dist/YTChita-Windows10_11-64bit.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: YB-Windows10_11-64bit
-          path: dist/YB-Windows10_11-64bit.zip
+          name: YTChita-Windows10_11-64bit
+          path: dist/YTChita-Windows10_11-64bit.zip
 
   create-release:
     needs: [build-macos, build-windows]
@@ -160,20 +160,22 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## v1.2.7 Bug Fix
+            ## v1.2.8
 
-            ### Windows: WebView2 Runtime Auto-Install
-            - Windows 10에서 WebView2 미설치 시 앱이 무응답으로 크래시하던 문제 수정
-            - 앱 시작 시 WebView2 자동 감지 → 없으면 MessageBox 안내 후 자동 설치
-            - UAC 권한 요청으로 설치 진행, 실패 시 수동 설치 URL 안내
+            ### Windows: Silent Crash Fix
+            - Windows에서 앱 실행 시 무반응/무음 크래시 문제 수정
+            - 에러 발생 시 Windows MessageBox로 원인 표시 + 로그 경로 안내
+            - 서버 시작 실패, WebView 로드 실패, 포트 충돌 등 모든 시작 오류 가시화
 
-            ### Download Stability
-            - 파일 리네임 실패(Unable to rename file) 시 임시 파일 정리 후 자동 재시도
-            - file_access_retries 옵션 추가로 파일 접근 안정성 향상
-            - 다운로드 실패 시 .temp.* 임시 파일도 함께 정리
+            ### Auto Port Recovery
+            - 포트 8000 충돌 시 자동으로 다음 포트(8001~8009) 탐색 후 실행
+            - 중복 인스턴스 감지를 health endpoint 기반으로 개선 (다른 앱 오판 방지)
+
+            ### Max Videos Increased
+            - 채널/플레이리스트 최대 분석 영상 수 500 → 2000으로 확대
           files: |
-            YB-Mac-Intel/YB-Mac-Intel.dmg
-            YB-Mac-M-Chip/YB-Mac-M-Chip.dmg
-            YB-Windows10_11-64bit/YB-Windows10_11-64bit.zip
+            YTChita-Mac-Intel/YTChita-Mac-Intel.dmg
+            YTChita-Mac-MChip/YTChita-Mac-MChip.dmg
+            YTChita-Windows10_11-64bit/YTChita-Windows10_11-64bit.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

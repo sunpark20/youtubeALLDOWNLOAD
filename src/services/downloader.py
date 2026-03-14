@@ -249,7 +249,7 @@ class YTBulkDownloader:
             logger.warning(f"Failed to resolve handle @{handle}: {e}")
         return None
 
-    def get_channel_videos(self, channel_url: str, max_videos: int = 500) -> List[Dict]:
+    def get_channel_videos(self, channel_url: str, max_videos: int = 2000) -> List[Dict]:
         """
         Get video list from a channel URL using yt-dlp (fallback when no API key).
 
@@ -319,7 +319,7 @@ class YTBulkDownloader:
             logger.error(f"Error getting channel videos via yt-dlp: {e}")
             return [], {}
 
-    def get_playlist_videos(self, playlist_url: str, max_videos: int = 500) -> List[Dict]:
+    def get_playlist_videos(self, playlist_url: str, max_videos: int = 2000) -> List[Dict]:
         """
         Get video list from a playlist URL using yt-dlp (fallback when no API key).
 

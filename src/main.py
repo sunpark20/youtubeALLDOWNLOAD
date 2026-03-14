@@ -11,8 +11,6 @@ import time
 import logging
 import traceback
 import urllib.request
-import webview
-
 from utils.logger import setup_logger
 from utils.config import Config
 from utils.crash_reporter import send_crash_report
@@ -21,19 +19,42 @@ from services.updater import update_ytdlp_on_startup
 # Setup logging
 logger = setup_logger("Main", logging.INFO)
 
+# Server thread failure signalling
+_server_failed = threading.Event()
+_server_error_msg = ""
+
+
+def _fatal_error(message: str):
+    """Show a native error dialog on Windows, then exit."""
+    logger.critical(message)
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            import os
+
+            log_dir = os.path.join(
+                os.environ.get("APPDATA", ""), "YT-Chita", "Logs"
+            )
+            ctypes.windll.user32.MessageBoxW(
+                0, f"{message}\n\nLog: {log_dir}", "YT Chita - Error", 0x10
+            )
+        except Exception:
+            pass
+    sys.exit(1)
+
 
 def _check_single_instance():
     """이미 실행 중인 인스턴스가 있으면 종료"""
-    import socket
 
-    # 1) 포트 체크 (크로스 플랫폼) — 이미 서버가 떠 있는지 확인
+    # 1) Health endpoint 체크 — YT-Chita가 실제로 떠 있는지 확인
+    #    (단순 TCP 체크는 다른 앱이 포트를 쓸 때 오판함)
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((Config.HOST, Config.PORT))
-        sock.close()
-        if result == 0:  # 포트가 이미 열려 있음 = 다른 인스턴스 실행 중
-            logger.warning("Another instance is already running (port in use). Exiting.")
+        resp = urllib.request.urlopen(
+            f"http://{Config.HOST}:{Config.PORT}/api/health", timeout=2
+        )
+        data = resp.read().decode()
+        if "healthy" in data.lower():
+            logger.warning("Another instance is already running (health check). Exiting.")
             sys.exit(0)
     except Exception:
         pass
@@ -117,33 +138,49 @@ def _check_environment():
             logger.warning("ffmpeg not found in PATH (development mode)")
 
 
-def start_fastapi_server():
+def _find_available_port():
+    """Find first available port starting from Config.PORT."""
+    import socket
+
+    for port in range(Config.PORT, Config.PORT + 10):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((Config.HOST, port))
+                return port
+        except OSError:
+            logger.warning(f"Port {port} is not available, trying next...")
+    return None
+
+
+def start_fastapi_server(port: int):
     """
     Start FastAPI server in background thread
     """
-    import uvicorn
-    from api.server import app
+    global _server_error_msg
+    try:
+        import uvicorn
+        from api.server import app
 
-    logger.info(f"Starting FastAPI server on {Config.HOST}:{Config.PORT}")
+        logger.info(f"Starting FastAPI server on {Config.HOST}:{port}")
 
-    # Run uvicorn server properly in a thread
-    import asyncio
-    
-    # Create config
-    config = uvicorn.Config(
-        app,
-        host=Config.HOST,
-        port=Config.PORT,
-        log_level="error",
-        access_log=False,
-    )
-    
-    server = uvicorn.Server(config)
-    
-    # Disable signal handlers as we're not in the main thread
-    server.install_signal_handlers = lambda: None
-    
-    server.run()
+        config = uvicorn.Config(
+            app,
+            host=Config.HOST,
+            port=port,
+            log_level="error",
+            access_log=False,
+        )
+
+        server = uvicorn.Server(config)
+
+        # Disable signal handlers as we're not in the main thread
+        server.install_signal_handlers = lambda: None
+
+        server.run()
+    except Exception as e:
+        _server_error_msg = f"Server failed to start: {e}"
+        logger.critical(_server_error_msg)
+        _server_failed.set()
 
 
 def main():
@@ -183,15 +220,27 @@ def main():
         logger.error(f"yt-dlp update error: {e}")
         logger.warning("Continuing without update...")
 
-    # Step 2: Start FastAPI server in background thread
+    # Step 2: Find available port and start FastAPI server
+    port = _find_available_port()
+    if port is None:
+        _fatal_error(
+            f"All ports {Config.PORT}-{Config.PORT + 9} are in use.\n"
+            "Close other applications or restart your computer."
+        )
+
+    if port != Config.PORT:
+        logger.info(f"Default port {Config.PORT} in use, using port {port}")
+
     logger.info("Starting background server...")
-    server_thread = threading.Thread(target=start_fastapi_server, daemon=True)
+    server_thread = threading.Thread(target=start_fastapi_server, args=(port,), daemon=True)
     server_thread.start()
 
     # Wait for server to be ready (health check polling)
-    health_url = f"http://{Config.HOST}:{Config.PORT}/api/health"
+    health_url = f"http://{Config.HOST}:{port}/api/health"
     server_ready = False
     for _ in range(20):  # max 10 seconds (20 * 0.5s)
+        if _server_failed.is_set():
+            break
         try:
             urllib.request.urlopen(health_url, timeout=1)
             server_ready = True
@@ -200,19 +249,23 @@ def main():
             time.sleep(0.5)
 
     if not server_ready:
-        logger.warning("Server did not respond to health check within 10s, proceeding anyway")
-        # Report startup failure so we know the server never came up
-        send_crash_report(
-            RuntimeError,
-            RuntimeError("Server failed to start within 10 seconds"),
-            None,
-        )
+        if _server_failed.is_set():
+            error_detail = _server_error_msg
+        else:
+            error_detail = "Server did not respond within 10 seconds."
+        send_crash_report(RuntimeError, RuntimeError(error_detail), None)
+        _fatal_error(error_detail)
 
     # Step 3: Create pywebview window
     logger.info("Creating desktop window...")
 
+    try:
+        import webview
+    except Exception as e:
+        _fatal_error(f"Failed to load WebView component: {e}")
+
     # Application URL
-    app_url = f"http://{Config.HOST}:{Config.PORT}"
+    app_url = f"http://{Config.HOST}:{port}"
 
     # Create window
     window = webview.create_window(
@@ -259,4 +312,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         send_crash_report(*sys.exc_info())
-        sys.exit(1)
+        _fatal_error(f"Unexpected error: {e}")
