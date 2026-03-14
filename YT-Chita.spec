@@ -60,6 +60,7 @@ a = Analysis(
         'uvicorn', 'uvicorn.config', 'uvicorn.main', 'uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto', 'uvicorn.loops.asyncio', 'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.http.h11_impl', 'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan', 'uvicorn.lifespan.on', 'uvicorn.lifespan.off',
         'anyio', 'anyio._backends', 'anyio._backends._asyncio',
         'pydantic', 'pydantic.deprecated', 'pydantic.deprecated.decorator',
+        'clr', 'pythonnet',
         'webview', 'yt_dlp', 'httptools', 'h11', 'python_multipart', 'multipart',
         'email.mime.multipart', 'email.mime.text', 'email.mime.message',
         'typing_extensions', 'aiofiles', 'requests', 'charset_normalizer', 'httplib2',

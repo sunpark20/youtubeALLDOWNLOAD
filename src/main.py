@@ -27,14 +27,16 @@ _server_error_msg = ""
 def _fatal_error(message: str):
     """Show a native error dialog on Windows, then exit."""
     logger.critical(message)
+    print(f"FATAL: {message}", file=sys.stderr)
     if sys.platform == "win32":
         try:
             import ctypes
             import os
 
-            log_dir = os.path.join(
-                os.environ.get("APPDATA", ""), "YT-Chita", "Logs"
-            )
+            appdata = os.environ.get("APPDATA", "")
+            if not appdata or not Path(appdata).exists():
+                appdata = str(Path.home())
+            log_dir = os.path.join(appdata, "YT-Chita", "Logs")
             ctypes.windll.user32.MessageBoxW(
                 0, f"{message}\n\nLog: {log_dir}", "YT Chita - Error", 0x10
             )
@@ -52,7 +54,7 @@ def _check_single_instance():
         resp = urllib.request.urlopen(
             f"http://{Config.HOST}:{Config.PORT}/api/health", timeout=2
         )
-        data = resp.read().decode()
+        data = resp.read().decode('utf-8', errors='replace')
         if "healthy" in data.lower():
             logger.warning("Another instance is already running (health check). Exiting.")
             sys.exit(0)
@@ -145,6 +147,7 @@ def _find_available_port():
     for port in range(Config.PORT, Config.PORT + 10):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((Config.HOST, port))
                 return port
         except OSError:
@@ -169,7 +172,7 @@ def start_fastapi_server(port: int):
             port=port,
             log_level="error",
             access_log=False,
-            log_config=None,
+            log_config={"version": 1, "disable_existing_loggers": False, "handlers": {}, "loggers": {}},
         )
 
         server = uvicorn.Server(config)
@@ -262,6 +265,16 @@ def main():
 
     try:
         import webview
+    except ImportError as e:
+        err_msg = str(e).lower()
+        if 'clr' in err_msg or 'pythonnet' in err_msg or 'python.runtime' in err_msg:
+            _fatal_error(
+                "WebView component failed to load.\n"
+                "Please reinstall the application or install .NET Desktop Runtime.\n"
+                f"\nDetail: {e}"
+            )
+        else:
+            _fatal_error(f"Failed to load WebView component: {e}")
     except Exception as e:
         _fatal_error(f"Failed to load WebView component: {e}")
 

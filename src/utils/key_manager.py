@@ -9,12 +9,12 @@ def save_api_key_to_file(api_key: str):
     try:
         config = {}
         if CONFIG_FILE.exists():
-            with open(CONFIG_FILE, 'r') as f:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config = json.load(f)
         
         config['api_key'] = api_key
         
-        with open(CONFIG_FILE, 'w') as f:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config, f)
         return True
     except Exception as e:
@@ -24,7 +24,7 @@ def save_api_key_to_file(api_key: str):
 def load_api_key_from_file() -> str:
     try:
         if CONFIG_FILE.exists():
-            with open(CONFIG_FILE, 'r') as f:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config = json.load(f)
                 return config.get('api_key', '')
     except Exception as e:
@@ -34,13 +34,13 @@ def load_api_key_from_file() -> str:
 def delete_api_key_from_file():
     try:
         if CONFIG_FILE.exists():
-            with open(CONFIG_FILE, 'r') as f:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config = json.load(f)
             
             if 'api_key' in config:
                 del config['api_key']
                 
-            with open(CONFIG_FILE, 'w') as f:
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(config, f)
     except Exception as e:
         print(f"Failed to delete API key: {e}")

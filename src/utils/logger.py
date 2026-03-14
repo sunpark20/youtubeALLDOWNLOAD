@@ -17,7 +17,10 @@ def _get_log_dir() -> Path:
         log_dir = Path.home() / "Library" / "Logs" / "YT-Chita"
     elif platform.system() == "Windows":
         import os
-        log_dir = Path(os.environ.get("APPDATA", Path.home())) / "YT-Chita" / "Logs"
+        appdata = os.environ.get("APPDATA", "")
+        if not appdata or not Path(appdata).exists():
+            appdata = str(Path.home())
+        log_dir = Path(appdata) / "YT-Chita" / "Logs"
     else:
         log_dir = Path.home() / ".local" / "share" / "YT-Chita" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
