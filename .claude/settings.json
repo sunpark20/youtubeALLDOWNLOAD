@@ -3,7 +3,12 @@
     "PostToolUse": [
       {
         "matcher": "Skill",
-        "command": "echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\"skill\"\\s*:\\s*\"c-' && echo '[HOOK REMINDER] /project: 커맨드가 완료되었습니다. 반드시 post-command-improve 스킬을 Skill tool로 호출하세요.' || true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\"skill\"\\s*:\\s*\"c-' && echo '[HOOK REMINDER] /project: 커맨드가 완료되었습니다. 반드시 post-command-improve 스킬을 Skill tool로 호출하세요.' || true"
+          }
+        ]
       }
     ]
   }
