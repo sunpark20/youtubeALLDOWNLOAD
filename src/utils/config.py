@@ -29,7 +29,7 @@ class Config:
 
     # Application
     APP_NAME = "YT Chita"
-    APP_VERSION = "1.2.9"
+    APP_VERSION = "1.3.0"
 
     # Server
     HOST = "127.0.0.1"
@@ -45,7 +45,7 @@ class Config:
 
     # Download settings
     DEFAULT_QUALITY = "720p"
-    MAX_VIDEOS_PER_REQUEST = 2000
+    MAX_VIDEOS_PER_REQUEST = 5000
 
     # Performance
     CHUNK_SIZE = 8192  # For file operations

@@ -27,6 +27,17 @@ def _get_log_dir() -> Path:
     return log_dir
 
 
+def _cleanup_old_logs(log_dir: Path, keep_days: int = 7):
+    """Delete log files older than keep_days."""
+    try:
+        cutoff = datetime.now().timestamp() - (keep_days * 86400)
+        for log_file in log_dir.glob("app_*.log"):
+            if log_file.stat().st_mtime < cutoff:
+                log_file.unlink()
+    except Exception:
+        pass
+
+
 def _setup_root_logger(level: int = logging.INFO):
     """
     루트 로거에 핸들러를 설정하여 모든 모듈의 로그를 캡처.
@@ -54,6 +65,7 @@ def _setup_root_logger(level: int = logging.INFO):
     # File handler
     try:
         log_dir = _get_log_dir()
+        _cleanup_old_logs(log_dir)
         log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d')}.log"
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(logging.DEBUG)

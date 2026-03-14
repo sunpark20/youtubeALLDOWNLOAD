@@ -160,11 +160,13 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## v1.2.9 Hotfix
+            ## v1.3.0
 
-            ### Windows Crash Fix
-            - 일부 Windows 환경에서 서버 시작 실패하던 문제 수정 (uvicorn 로깅 설정 오류)
-            - "Unable to configure formatter 'default'" 에러 해결
+            ### 개선
+            - 최대 영상 수 2000 → 5000으로 확대
+            - 로그 파일 자동 정리 (7일 이상 된 로그 자동 삭제)
+            - 크래시 후 재시작 시 mutex 잔류 방지 (atexit 해제)
+            - ffmpeg 번들 누락 시 안내 메시지 개선
           files: |
             YTChita-Mac-Intel/YTChita-Mac-Intel.dmg
             YTChita-Mac-MChip/YTChita-Mac-MChip.dmg

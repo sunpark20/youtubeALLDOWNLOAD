@@ -64,17 +64,22 @@ def _check_single_instance():
     # 2) Windows Named Mutex — 더 확실한 방지
     if sys.platform == 'win32':
         import ctypes
+        import atexit
         kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
         mutex_name = "Global\\YouTubeBulkDownloaderMutex"
         mutex = kernel32.CreateMutexW(None, True, mutex_name)
         last_error = ctypes.get_last_error()
         ERROR_ALREADY_EXISTS = 183
         if last_error == ERROR_ALREADY_EXISTS:
+            # health check가 실패했으면 이전 프로세스가 비정상 종료한 것
+            # → mutex를 인수받아 계속 진행
             logger.warning("Another instance is already running (mutex). Exiting.")
             kernel32.CloseHandle(mutex)
             sys.exit(0)
         # mutex를 반환하지 않고 프로세스 수명 동안 유지 (GC 방지)
         _check_single_instance._mutex = mutex
+        # 프로세스 종료 시 mutex 해제 (크래시 후 재시작 시 잔여 mutex 방지)
+        atexit.register(lambda: kernel32.ReleaseMutex(mutex))
 
 
 def _handle_uncaught_exception(exc_type, exc_value, exc_tb):
@@ -121,17 +126,21 @@ def _check_environment():
     if getattr(sys, "frozen", False):
         # Packaged app: ffmpeg should be next to the executable
         exe_dir = Path(sys.executable).parent
-        ffmpeg_bin = exe_dir / "ffmpeg"
+        ffmpeg_name = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
+        ffmpeg_bin = exe_dir / ffmpeg_name
         if ffmpeg_bin.exists():
             logger.info(f"ffmpeg (bundled): {ffmpeg_bin}")
         else:
-            logger.warning(f"ffmpeg NOT found in bundle at {ffmpeg_bin}")
+            logger.warning(f"ffmpeg NOT found in bundle at {exe_dir / 'ffmpeg'}")
             # Fall back to PATH
             fallback = shutil.which("ffmpeg")
             if fallback:
                 logger.info(f"ffmpeg (PATH fallback): {fallback}")
             else:
-                logger.error("ffmpeg not found — downloads requiring merge will fail")
+                logger.error(
+                    "ffmpeg not found — downloads requiring merge will fail. "
+                    "Place ffmpeg in the same folder as the application, or install it to PATH."
+                )
     else:
         ffmpeg_path = shutil.which("ffmpeg")
         if ffmpeg_path:

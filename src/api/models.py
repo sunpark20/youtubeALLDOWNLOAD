@@ -13,14 +13,14 @@ from pydantic import BaseModel, Field
 class ChannelAnalyzeRequest(BaseModel):
     """Request to analyze a YouTube channel"""
     url: str = Field(..., description="YouTube channel URL")
-    max_videos: int = Field(default=2000, description="Maximum videos to fetch")
+    max_videos: int = Field(default=5000, description="Maximum videos to fetch")
     include_shorts: bool = Field(default=False, description="Include Shorts (≤180s) in results")
 
 
 class PlaylistAnalyzeRequest(BaseModel):
     """Request to analyze a YouTube playlist"""
     url: str = Field(..., description="YouTube playlist URL")
-    max_videos: int = Field(default=2000, description="Maximum videos to fetch")
+    max_videos: int = Field(default=5000, description="Maximum videos to fetch")
 
 
 class DownloadExtractRequest(BaseModel):
